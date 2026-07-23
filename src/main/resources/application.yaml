@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: ptin
+  datasource:
+    url: ${PTIN_DB_URL:jdbc:postgresql://localhost:5433/ptin}
+    username: ${PTIN_DB_USERNAME:ptin}
+    password: ${PTIN_DB_PASSWORD:ptin}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+security:
+  jwt:
+    secret: ${PTIN_JWT_SECRET:ZmFrZS1kZXYtb25seS1zZWNyZXQta2V5LWNoYW5nZS1pbi1wcm9kLTEyMzQ1Ng==}
+    access-token-expiry-seconds: ${PTIN_JWT_EXPIRY_SECONDS:86400}
+
+otp:
+  code-length: 6
+  ttl-seconds: 300
+  max-attempts: 5
+
+ptin:
+  mediation:
+    base-url: ${PTIN_MEDIATION_BASE_URL:http://localhost:8081}
+    hash-key: ${PTIN_MEDIATION_HASH_KEY:}
+    sys: ${PTIN_MEDIATION_SYS:}
+    connect-timeout-ms: 5000
+    read-timeout-ms: 10000

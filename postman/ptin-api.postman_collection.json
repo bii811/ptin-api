@@ -1,0 +1,372 @@
+{
+  "info": {
+    "name": "PTIN API",
+    "description": "Personal TIN (PTIN) registration system API — mobile+OTP auth, profile, and PTIN application submission/approval/mediation flows.\n\nOTP delivery is stubbed in dev: the code is logged to the application console (LoggingOtpSenderAdapter) instead of being sent via SMS. Copy the logged code into the `otpCode` / `authorizerOtpCode` variables before running the verify requests.\n\nAuthorizer accounts are never created via self-registration — after registering a second user normally, manually flip its `role` column to `AUTHORIZER` in the `users` table before running the Authorizer Actions folder.\n\nSuggested run order: Auth (register, verify, login, verify) -> Profile (update) -> PTIN Applications (submit) -> Authorizer Actions (login as authorizer, list pending, approve/reject/retry).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{accessToken}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
+    { "key": "mobileNumber", "value": "2091234567", "type": "string" },
+    { "key": "otpCode", "value": "", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "authorizerMobileNumber", "value": "2099876543", "type": "string" },
+    { "key": "authorizerOtpCode", "value": "", "type": "string" },
+    { "key": "authorizerAccessToken", "value": "", "type": "string" },
+    { "key": "applicationId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register - Request OTP",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register/otp/request",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "register", "otp", "request"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mobileNumber\": \"{{mobileNumber}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register - Verify OTP",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register/otp/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "register", "otp", "verify"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mobileNumber\": \"{{mobileNumber}}\",\n  \"otpCode\": \"{{otpCode}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login - Request OTP",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login/otp/request",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login", "otp", "request"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mobileNumber\": \"{{mobileNumber}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login - Verify OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.data && json.data.accessToken) {",
+                  "    pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "    console.log('Saved accessToken for', pm.collectionVariables.get('mobileNumber'));",
+                  "}",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('accessToken present', () => pm.expect(json.data.accessToken).to.be.a('string'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login/otp/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login", "otp", "verify"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mobileNumber\": \"{{mobileNumber}}\",\n  \"otpCode\": \"{{otpCode}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Current User (me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/profile/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "profile", "me"]
+            }
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/profile/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "profile", "me"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Somchai\",\n  \"lastName\": \"Vong\",\n  \"avatarUrl\": null\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "PTIN Applications",
+      "item": [
+        {
+          "name": "Submit Application",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.data && json.data.id) {",
+                  "    pm.collectionVariables.set('applicationId', json.data.id);",
+                  "    console.log('Saved applicationId', json.data.id);",
+                  "}",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ptin/applications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ptin", "applications"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"laboId\": \"LABO001\",\n  \"givenName\": \"Somchai\",\n  \"familyName\": \"Vong\",\n  \"gender\": \"M\",\n  \"nationality\": \"LA\",\n  \"birthDay\": \"19900115\",\n  \"individualId\": \"ID123456\",\n  \"individualIdType\": \"01\",\n  \"familyBookIssuancePlace\": \"Vientiane Capital\",\n  \"telNo\": \"021123456\",\n  \"hpNo\": \"2091234567\",\n  \"faxNo\": \"\",\n  \"email\": \"somchai.vong@example.com\",\n  \"addrSeqNo\": \"00000001\",\n  \"unitNo\": \"001\",\n  \"roadNm\": \"Lane Xang Avenue\",\n  \"houNo\": \"123\",\n  \"pboxNo\": \"\",\n  \"pubOffiYn\": \"N\",\n  \"indBusnOprYn\": \"N\",\n  \"pvtCoEmpYn\": \"Y\",\n  \"etcJobCont\": \"\",\n  \"workTin\": \"100200300400\",\n  \"workAddrSeqNo\": \"00000002\",\n  \"workUnitNo\": \"002\",\n  \"workRoadNm\": \"23 Singha Road\",\n  \"workHouNo\": \"45\",\n  \"srlAmt\": \"5000000\",\n  \"divdIncYn\": \"N\",\n  \"rentIncYn\": \"N\",\n  \"etcIncCont\": \"\",\n  \"bankAccNo\": \"0011223344\",\n  \"soSeNo\": \"SOSE998877\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List My Applications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ptin/applications/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ptin", "applications", "me"]
+            }
+          }
+        },
+        {
+          "name": "Get Application By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ptin/applications/{{applicationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ptin", "applications", "{{applicationId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authorizer Actions",
+      "description": "Requires a second registered user whose `role` column has been manually set to AUTHORIZER in the `users` table (no self-service path mints authorizers).",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          { "key": "token", "value": "{{authorizerAccessToken}}", "type": "string" }
+        ]
+      },
+      "item": [
+        {
+          "name": "Authorizer Login - Request OTP",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login/otp/request",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login", "otp", "request"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mobileNumber\": \"{{authorizerMobileNumber}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Authorizer Login - Verify OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.data && json.data.accessToken) {",
+                  "    pm.collectionVariables.set('authorizerAccessToken', json.data.accessToken);",
+                  "    console.log('Saved authorizerAccessToken');",
+                  "}",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('role is AUTHORIZER', () => pm.expect(json.data.role).to.eql('AUTHORIZER'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login/otp/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login", "otp", "verify"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mobileNumber\": \"{{authorizerMobileNumber}}\",\n  \"otpCode\": \"{{authorizerOtpCode}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List Pending Applications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ptin/applications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ptin", "applications"]
+            }
+          }
+        },
+        {
+          "name": "Approve Application",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ptin/applications/{{applicationId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ptin", "applications", "{{applicationId}}", "approve"]
+            }
+          }
+        },
+        {
+          "name": "Reject Application",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ptin/applications/{{applicationId}}/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ptin", "applications", "{{applicationId}}", "reject"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Incomplete documentation\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Retry Issuance",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ptin/applications/{{applicationId}}/retry",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ptin", "applications", "{{applicationId}}", "retry"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Actuator Health",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuator", "health"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
