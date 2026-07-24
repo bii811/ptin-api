@@ -6,11 +6,17 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(name = "otp_challenges")
 @SQLRestriction("deleted_at is null")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class OtpChallengeJpaEntity extends AuditableJpaEntity {
 
     @Column(name = "mobile_number", nullable = false, length = 20)
@@ -25,17 +31,16 @@ public class OtpChallengeJpaEntity extends AuditableJpaEntity {
     @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
 
+    @Setter
     @Column(name = "attempt_count", nullable = false)
     private int attemptCount;
 
     @Column(name = "max_attempts", nullable = false)
     private int maxAttempts;
 
+    @Setter
     @Column(name = "consumed_at")
     private Instant consumedAt;
-
-    protected OtpChallengeJpaEntity() {
-    }
 
     public OtpChallengeJpaEntity(
             UUID id,
@@ -53,42 +58,6 @@ public class OtpChallengeJpaEntity extends AuditableJpaEntity {
         this.expiresAt = expiresAt;
         this.attemptCount = attemptCount;
         this.maxAttempts = maxAttempts;
-        this.consumedAt = consumedAt;
-    }
-
-    public String getMobileNumber() {
-        return mobileNumber;
-    }
-
-    public String getPurpose() {
-        return purpose;
-    }
-
-    public String getCodeHash() {
-        return codeHash;
-    }
-
-    public Instant getExpiresAt() {
-        return expiresAt;
-    }
-
-    public int getAttemptCount() {
-        return attemptCount;
-    }
-
-    public int getMaxAttempts() {
-        return maxAttempts;
-    }
-
-    public Instant getConsumedAt() {
-        return consumedAt;
-    }
-
-    public void setAttemptCount(int attemptCount) {
-        this.attemptCount = attemptCount;
-    }
-
-    public void setConsumedAt(Instant consumedAt) {
         this.consumedAt = consumedAt;
     }
 }

@@ -6,6 +6,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.Getter;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -19,6 +20,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
  * {@link Persistable} with {@code createdAt == null} as the "is new" signal lets Spring Data JPA
  * correctly choose persist() over merge() for these pre-assigned-identifier entities.
  */
+@Getter
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
 public abstract class AuditableJpaEntity implements Persistable<UUID> {
@@ -60,30 +62,6 @@ public abstract class AuditableJpaEntity implements Persistable<UUID> {
     @Override
     public boolean isNew() {
         return createdAt == null;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public String getCreatedBy() {
-        return createdBy;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public String getUpdatedBy() {
-        return updatedBy;
-    }
-
-    public Instant getDeletedAt() {
-        return deletedAt;
-    }
-
-    public String getDeletedBy() {
-        return deletedBy;
     }
 
     public void markDeleted(String deletedByUserId) {

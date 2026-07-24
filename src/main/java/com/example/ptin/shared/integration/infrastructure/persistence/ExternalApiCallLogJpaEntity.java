@@ -6,10 +6,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Persistable;
 
 @Entity
 @Table(name = "external_api_call_logs")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ExternalApiCallLogJpaEntity implements Persistable<UUID> {
 
     @Id
@@ -44,9 +47,6 @@ public class ExternalApiCallLogJpaEntity implements Persistable<UUID> {
 
     @Column(name = "called_at", nullable = false)
     private Instant calledAt;
-
-    protected ExternalApiCallLogJpaEntity() {
-    }
 
     public ExternalApiCallLogJpaEntity(UUID id, String systemName, String endpoint, String httpMethod,
             String requestBody, String responseBody, Integer statusCode, boolean success,
