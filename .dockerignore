@@ -1,0 +1,10 @@
+.git
+.gradle
+.vscode
+bin
+build
+HELP.md
+CLAUDE.md
+postman
+docker-compose.yml
+*.md
