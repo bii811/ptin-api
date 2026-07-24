@@ -5,3 +5,11 @@ logging:
 
 otp:
   expose-in-response: true
+
+ptin:
+  mediation:
+    base-url: ${PTIN_MEDIATION_BASE_URL:http://202.123.182.165:8080}
+    hash-key: ${PTIN_MEDIATION_HASH_KEY:4Z79Dkk13fGwfrxNhc2GgPHec6giw96VLrY9evrNHfo=}
+    sys: ${PTIN_MEDIATION_SYS:}
+    connect-timeout-ms: 5000
+    read-timeout-ms: 10000

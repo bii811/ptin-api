@@ -1,9 +1,9 @@
-package com.example.ptin.ptin.infrastructure.mediation;
+package com.example.ptin.taxdeclaration.infrastructure.mediation;
 
-import com.example.ptin.ptin.domain.model.PtinApplication;
-import com.example.ptin.ptin.domain.port.out.TinMediationClient;
 import com.example.ptin.shared.integration.infrastructure.client.ExternalApiCallLoggingInterceptorFactory;
 import com.example.ptin.shared.mediation.TaxRisMediationProperties;
+import com.example.ptin.taxdeclaration.domain.model.TaxDeclaration;
+import com.example.ptin.taxdeclaration.domain.port.out.TaxMediationClient;
 import org.springframework.http.client.BufferingClientHttpRequestFactory;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -12,15 +12,15 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 @Component
-class TinMediationRestAdapter implements TinMediationClient {
+class CrsPfmMediationRestAdapter implements TaxMediationClient {
 
-    private static final String REQ_TIN_INFO_PATH = "/mediate/TaxRIS/managePTinInformation/ReqTinInfo";
+    private static final String SND_CRS_PATH = "/mediate/TaxRIS/createPfmFromCRSDtl/SndCrs";
     private static final String SYSTEM_NAME = "TaxRIS-Mediation";
 
     private final RestClient restClient;
     private final TaxRisMediationProperties properties;
 
-    TinMediationRestAdapter(RestClient.Builder restClientBuilder, TaxRisMediationProperties properties,
+    CrsPfmMediationRestAdapter(RestClient.Builder restClientBuilder, TaxRisMediationProperties properties,
             ExternalApiCallLoggingInterceptorFactory loggingInterceptorFactory) {
         this.properties = properties;
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
@@ -35,24 +35,24 @@ class TinMediationRestAdapter implements TinMediationClient {
     }
 
     @Override
-    public MediationResult submit(PtinApplication application) {
-        ReqTinInfoRequest request = ReqTinInfoRequest.from(application, properties.hashKey(), properties.sys());
+    public SubmissionResult submit(TaxDeclaration declaration) {
+        SndCrsRequest request = SndCrsRequest.from(declaration, properties.hashKey());
         try {
-            ReqTinInfoResponse response = restClient.post()
-                    .uri(REQ_TIN_INFO_PATH)
+            SndCrsResponse response = restClient.post()
+                    .uri(SND_CRS_PATH)
                     .body(request)
                     .retrieve()
-                    .body(ReqTinInfoResponse.class);
+                    .body(SndCrsResponse.class);
 
             if (response == null) {
-                return MediationResult.failure("Empty response from mediation service");
+                return SubmissionResult.failure(null, "Empty response from mediation service");
             }
             if (!response.isSuccess()) {
-                return MediationResult.failure(response.errorMessage());
+                return SubmissionResult.failure(response.code(), response.message());
             }
-            return MediationResult.success(response.tin(), response.taxrGvNm(), response.taxrFamNm());
+            return SubmissionResult.success(response.code(), response.message());
         } catch (RestClientException e) {
-            return MediationResult.failure(e.getMessage());
+            return SubmissionResult.failure(null, e.getMessage());
         }
     }
 }
