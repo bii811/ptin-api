@@ -45,7 +45,7 @@ class RequestLoginOtpService implements RequestLoginOtpUseCase {
     }
 
     @Override
-    public void requestOtp(RequestLoginOtpCommand command) {
+    public OtpIssued requestOtp(RequestLoginOtpCommand command) {
         MobileNumber mobileNumber = new MobileNumber(command.mobileNumber());
         User user = userRepository.findByMobileNumber(mobileNumber)
                 .filter(User::isActive)
@@ -58,5 +58,6 @@ class RequestLoginOtpService implements RequestLoginOtpUseCase {
         otpChallengeRepository.save(challenge);
 
         otpSender.send(mobileNumber, plainCode);
+        return new OtpIssued(plainCode);
     }
 }

@@ -20,6 +20,7 @@ import com.example.ptin.profile.domain.port.in.GetProfileUseCase;
 import com.example.ptin.shared.security.model.AuthenticatedPrincipal;
 import com.example.ptin.shared.web.ApiResponse;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,6 +38,7 @@ public class AuthController {
     private final VerifyLoginOtpUseCase verifyLoginOtpUseCase;
     private final UserRepository userRepository;
     private final GetProfileUseCase getProfileUseCase;
+    private final boolean exposeOtpInResponse;
 
     public AuthController(
             RequestRegistrationOtpUseCase requestRegistrationOtpUseCase,
@@ -44,19 +46,21 @@ public class AuthController {
             RequestLoginOtpUseCase requestLoginOtpUseCase,
             VerifyLoginOtpUseCase verifyLoginOtpUseCase,
             UserRepository userRepository,
-            GetProfileUseCase getProfileUseCase) {
+            GetProfileUseCase getProfileUseCase,
+            @Value("${otp.expose-in-response:false}") boolean exposeOtpInResponse) {
         this.requestRegistrationOtpUseCase = requestRegistrationOtpUseCase;
         this.verifyRegistrationOtpUseCase = verifyRegistrationOtpUseCase;
         this.requestLoginOtpUseCase = requestLoginOtpUseCase;
         this.verifyLoginOtpUseCase = verifyLoginOtpUseCase;
         this.userRepository = userRepository;
         this.getProfileUseCase = getProfileUseCase;
+        this.exposeOtpInResponse = exposeOtpInResponse;
     }
 
     @PostMapping("/register/otp/request")
     public ApiResponse<Void> requestRegistrationOtp(@Valid @RequestBody RequestOtpRequest request) {
-        requestRegistrationOtpUseCase.requestOtp(new RequestRegistrationOtpCommand(request.mobileNumber()));
-        return ApiResponse.successVoid();
+        var issued = requestRegistrationOtpUseCase.requestOtp(new RequestRegistrationOtpCommand(request.mobileNumber()));
+        return ApiResponse.success(null, exposeOtpInResponse ? "OTP: " + issued.otpCode() : null);
     }
 
     @PostMapping("/register/otp/verify")
@@ -68,8 +72,8 @@ public class AuthController {
 
     @PostMapping("/login/otp/request")
     public ApiResponse<Void> requestLoginOtp(@Valid @RequestBody RequestOtpRequest request) {
-        requestLoginOtpUseCase.requestOtp(new RequestLoginOtpCommand(request.mobileNumber()));
-        return ApiResponse.successVoid();
+        var issued = requestLoginOtpUseCase.requestOtp(new RequestLoginOtpCommand(request.mobileNumber()));
+        return ApiResponse.success(null, exposeOtpInResponse ? "OTP: " + issued.otpCode() : null);
     }
 
     @PostMapping("/login/otp/verify")

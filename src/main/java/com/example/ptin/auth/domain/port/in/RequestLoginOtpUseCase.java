@@ -2,8 +2,11 @@ package com.example.ptin.auth.domain.port.in;
 
 public interface RequestLoginOtpUseCase {
 
-    void requestOtp(RequestLoginOtpCommand command);
+    OtpIssued requestOtp(RequestLoginOtpCommand command);
 
     record RequestLoginOtpCommand(String mobileNumber) {
+    }
+
+    record OtpIssued(String otpCode) {
     }
 }

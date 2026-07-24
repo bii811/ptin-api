@@ -2,3 +2,6 @@ logging:
   level:
     root: INFO
     com.example.ptin: DEBUG
+
+otp:
+  expose-in-response: true

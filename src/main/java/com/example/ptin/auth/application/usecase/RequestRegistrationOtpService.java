@@ -45,7 +45,7 @@ class RequestRegistrationOtpService implements RequestRegistrationOtpUseCase {
     }
 
     @Override
-    public void requestOtp(RequestRegistrationOtpCommand command) {
+    public OtpIssued requestOtp(RequestRegistrationOtpCommand command) {
         MobileNumber mobileNumber = new MobileNumber(command.mobileNumber());
         User user = userRepository.findByMobileNumber(mobileNumber).orElseGet(() -> User.register(mobileNumber));
         if (user.isActive()) {
@@ -60,5 +60,6 @@ class RequestRegistrationOtpService implements RequestRegistrationOtpUseCase {
         otpChallengeRepository.save(challenge);
 
         otpSender.send(mobileNumber, plainCode);
+        return new OtpIssued(plainCode);
     }
 }
