@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "PTIN API",
-    "description": "Personal TIN (PTIN) registration system API — mobile+OTP auth, profile, and PTIN application submission/approval/mediation flows.\n\nOTP delivery is stubbed in dev: the code is logged to the application console (LoggingOtpSenderAdapter) instead of being sent via SMS. Copy the logged code into the `otpCode` / `authorizerOtpCode` variables before running the verify requests.\n\nAuthorizer accounts are never created via self-registration — after registering a second user normally, manually flip its `role` column to `AUTHORIZER` in the `users` table before running the Authorizer Actions folder.\n\nSuggested run order: Auth (register, verify, login, verify) -> Profile (update) -> PTIN Applications (submit) -> Authorizer Actions (login as authorizer, list pending, approve/reject/retry).",
+    "description": "Personal TIN (PTIN) registration system API — mobile+OTP auth, profile, and PTIN application submission/approval/mediation flows.\n\nOTP delivery is stubbed in dev: the code is logged to the application console (LoggingOtpSenderAdapter) instead of being sent via SMS. Copy the logged code into the `otpCode` / `authorizerOtpCode` variables before running the verify requests.\n\nAuthorizer accounts are never created via self-registration — after registering a second user normally, manually flip its `role` column to `AUTHORIZER` in the `users` table before running the Authorizer Actions folder.\n\nSuggested run order: Auth (register, verify, login, verify) -> Profile (update) -> PTIN Applications (submit) -> Authorizer Actions (login as authorizer, list pending, approve/reject/retry).\n\n**Environments**: select `ptin-local.postman_environment.json` (`http://localhost:8080`) for local dev, or `ptin-uat.postman_environment.json` (`http://202.123.177.30:8087`, the public port `scripts/deploy-uat.sh` publishes the container on) for the UAT server. Always run requests with one of these two environments selected — the \"Login - Verify OTP\" / \"Authorizer Login - Verify OTP\" / \"Submit Application\" test scripts write `accessToken` / `authorizerAccessToken` / `applicationId` into both the active environment and the collection variables, since an active environment's variable of the same name otherwise shadows the collection variable and later requests would send an empty token.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -91,6 +91,7 @@
                 "exec": [
                   "const json = pm.response.json();",
                   "if (json && json.data && json.data.accessToken) {",
+                  "    pm.environment.set('accessToken', json.data.accessToken);",
                   "    pm.collectionVariables.set('accessToken', json.data.accessToken);",
                   "    console.log('Saved accessToken for', pm.collectionVariables.get('mobileNumber'));",
                   "}",
@@ -179,6 +180,7 @@
                 "exec": [
                   "const json = pm.response.json();",
                   "if (json && json.data && json.data.id) {",
+                  "    pm.environment.set('applicationId', json.data.id);",
                   "    pm.collectionVariables.set('applicationId', json.data.id);",
                   "    console.log('Saved applicationId', json.data.id);",
                   "}",
@@ -268,6 +270,7 @@
                 "exec": [
                   "const json = pm.response.json();",
                   "if (json && json.data && json.data.accessToken) {",
+                  "    pm.environment.set('authorizerAccessToken', json.data.accessToken);",
                   "    pm.collectionVariables.set('authorizerAccessToken', json.data.accessToken);",
                   "    console.log('Saved authorizerAccessToken');",
                   "}",
