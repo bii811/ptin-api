@@ -45,9 +45,20 @@ rather than invoking `docker build` directly:
 overlay only non-secret, environment-specific behavior (logging levels, `otp.expose-in-response`).
 **Convention: real secrets/environment endpoints go through env-var placeholders in the base file
 (injected by the deployment platform at runtime); profile YAML files are for behavioral differences
-only, never for secrets.** `otp.expose-in-response` is `true` by default and in `uat`, `false` in `prod`
-— it controls whether `/register/otp/request` and `/login/otp/request` echo the plaintext OTP in the
-API response `message` (for environments without a real SMS gateway wired up).
+only, never for secrets.**
+
+Two auth toggles differ per environment:
+
+- `otp.expose-in-response` (`true` by default and in `uat`, `false` in `prod`) — echo the plaintext
+  OTP in the API response `message`, for environments without a real SMS gateway wired up.
+- `otp.conceal-account-existence` (`false` by default and in `uat`, `true` in `prod`) — answer OTP
+  requests for unknown accounts with a normal-looking success instead of 404/401, so the endpoints
+  cannot be used to enumerate registered mobile numbers or TINs. Off in non-prod so testing stays
+  legible.
+
+The remaining OTP/password policy lives in `otp.*` and `auth.password.*` and is bound to the
+`OtpProperties` / `PasswordLoginProperties` records in `auth/config` (durations are ISO/Boot duration
+strings like `5m`, `60s`, `1h` — not `*-seconds` ints).
 
 ## Architecture
 
@@ -109,21 +120,50 @@ in that gateway's Javadoc — read it before changing this flow:
 
 ### Auth model
 
-There is no password login — **OTP is the entire credential**. `/api/v1/auth/register/otp/request`
-+ `/register/otp/verify` activates a new `APPLICANT` user; `/login/otp/request` + `/login/otp/verify`
-is the sole login path and mints a JWT on success. OTP codes are generated in-memory, hashed with
-BCrypt before persisting (`OtpChallenge` never stores the plaintext code), and sent via the
-`OtpSender` port — `LoggingOtpSenderAdapter` is a placeholder that just logs the code; swap it for a
-real SMS gateway per environment via `@Profile` if/when one exists (no `@Profile`-based adapter
-swapping exists yet — this would be the first).
+Two credentials, gated on whether a TIN exists yet:
+
+- **Phone + OTP** — the only credential before a TIN is issued, and the permanent fallback afterwards.
+  `/api/v1/auth/register/otp/request` + `/register/otp/verify` activates a new `APPLICANT`;
+  `/login/otp/request` + `/login/otp/verify` mints a JWT.
+- **TIN + password** — available once the user has an `ISSUED` PTIN. `POST /api/v1/auth/password`
+  (authenticated) sets it; `/login/password` then accepts `{tin, password}`. Setting a password is
+  optional and never disables the OTP path. Replacing an existing password requires
+  `currentPassword`; the initial set does not, because reaching it already required an OTP login.
+- **Forgotten password** — `/forgot-password/otp/request` takes `{tin, mobileNumber}` and only ever
+  sends the code to the number already registered on that account; `/forgot-password/reset` then
+  takes `{tin, mobileNumber, otpCode, newPassword}`. A reset also clears any standing lockout.
+
+`auth` learns about TINs through its own `TaxpayerTinLookupPort` (`infrastructure/acl/PtinTinLookupAdapter`
+→ `ptin`'s `FindIssuedTinUseCase`), never by reaching into the `ptin` module.
+
+OTP codes are generated in-memory, hashed with BCrypt before persisting (`OtpChallenge` never stores
+the plaintext code), and sent via the `OtpSender` port — `LoggingOtpSenderAdapter` is a placeholder
+that just logs the code; swap it for a real SMS gateway per environment via `@Profile` if/when one
+exists (no `@Profile`-based adapter swapping exists yet — this would be the first). All three OTP
+flows issue through the single `OtpChallengeIssuer`, which enforces the resend cooldown and
+per-window rate limit and retires any still-outstanding code for the same number+purpose.
+
+**Failed-attempt counters must be committed in their own transaction.** `OtpChallengeTransactionalGateway`
+and `UserCredentialTransactionalGateway` both use `Propagation.REQUIRES_NEW` and both *return* an
+outcome enum (`OtpVerificationResult` / `PasswordAuthenticationResult`) instead of throwing —
+the caller invokes `ensureSuccess()` only after the gateway has committed. This is load-bearing, not
+style: a failed attempt signals failure by throwing, which rolls the caller's transaction back, so an
+increment made inside that transaction is discarded and the ceiling is never reached. Both gateways
+also load their row `FOR UPDATE` (`lockActiveChallenge` / `lockById`) so concurrent attempts serialise
+instead of losing updates.
 
 Security is stateless (`SessionCreationPolicy.STATELESS`, no CSRF): `JwtAuthenticationFilter` reads
 the `Authorization: Bearer` header, parses the JWT, and populates an `AuthenticatedPrincipal` with a
 single `ROLE_<UserRole>` authority (`APPLICANT` or `AUTHORIZER`). `SecurityConfig` only permits
-`/api/v1/auth/register/**`, `/api/v1/auth/login/**`, and `/actuator/health` without auth. **Role
-gating for authorizer-only actions (`approve`/`reject`/`retry`/list-pending) is enforced with
-`@PreAuthorize("hasRole('AUTHORIZER')")` on the application-service methods, not in the controller**
-— `MethodSecurityConfig` enables this.
+`/api/v1/auth/register/**`, `/api/v1/auth/login/**`, `/api/v1/auth/forgot-password/**`, and
+`/actuator/health` without auth. **Role gating for authorizer-only actions
+(`approve`/`reject`/`retry`/list-pending) is enforced with `@PreAuthorize("hasRole('AUTHORIZER')")` on
+the application-service methods, not in the controller** — `MethodSecurityConfig` enables this.
+
+Tokens carry `jti`/`iss` and are validated against the configured `security.jwt.issuer`.
+`JwtTokenProvider.issueAccessToken` returns an `IssuedToken` so the advertised `expiresAt` cannot
+drift from the token's own `exp`. Note that JWTs are **not** revoked on password change or reset —
+an already-issued token stays valid until it expires.
 
 ### Persistence conventions
 

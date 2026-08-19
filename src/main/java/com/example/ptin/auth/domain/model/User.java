@@ -1,6 +1,7 @@
 package com.example.ptin.auth.domain.model;
 
 import com.example.ptin.shared.identity.UserId;
+import java.time.Instant;
 
 public class User {
 
@@ -9,27 +10,119 @@ public class User {
     private final UserRole role;
     private UserStatus status;
 
-    private User(UserId id, MobileNumber mobileNumber, UserRole role, UserStatus status) {
+    /** Null until the user opts into TIN + password login; OTP alone remains a valid credential. */
+    private String passwordHash;
+
+    private Instant passwordUpdatedAt;
+    private int failedLoginAttempts;
+    private Instant lockedUntil;
+
+    private User(
+            UserId id,
+            MobileNumber mobileNumber,
+            UserRole role,
+            UserStatus status,
+            String passwordHash,
+            Instant passwordUpdatedAt,
+            int failedLoginAttempts,
+            Instant lockedUntil) {
         this.id = id;
         this.mobileNumber = mobileNumber;
         this.role = role;
         this.status = status;
+        this.passwordHash = passwordHash;
+        this.passwordUpdatedAt = passwordUpdatedAt;
+        this.failedLoginAttempts = failedLoginAttempts;
+        this.lockedUntil = lockedUntil;
     }
 
     public static User register(MobileNumber mobileNumber) {
         // Public self-registration can only ever create an APPLICANT; AUTHORIZER accounts are provisioned out-of-band.
-        return new User(UserId.generate(), mobileNumber, UserRole.APPLICANT, UserStatus.PENDING_VERIFICATION);
+        return new User(
+                UserId.generate(), mobileNumber, UserRole.APPLICANT, UserStatus.PENDING_VERIFICATION, null, null, 0, null);
     }
 
-    public static User reconstitute(UserId id, MobileNumber mobileNumber, UserRole role, UserStatus status) {
-        return new User(id, mobileNumber, role, status);
+    public static User reconstitute(
+            UserId id,
+            MobileNumber mobileNumber,
+            UserRole role,
+            UserStatus status,
+            String passwordHash,
+            Instant passwordUpdatedAt,
+            int failedLoginAttempts,
+            Instant lockedUntil) {
+        return new User(
+                id, mobileNumber, role, status, passwordHash, passwordUpdatedAt, failedLoginAttempts, lockedUntil);
     }
 
+    /** Idempotent: re-verifying an already-active account is a no-op, not an error. */
     public void activate() {
-        if (status == UserStatus.ACTIVE) {
-            throw new IllegalStateException("User is already active");
-        }
         this.status = UserStatus.ACTIVE;
+    }
+
+    /**
+     * Installs a new password hash and clears any standing lockout, so a user who reset their
+     * password after being locked out can log in immediately.
+     */
+    public void changePassword(String newPasswordHash, Instant now) {
+        if (newPasswordHash == null || newPasswordHash.isBlank()) {
+            throw new IllegalArgumentException("newPasswordHash must not be blank");
+        }
+        this.passwordHash = newPasswordHash;
+        this.passwordUpdatedAt = now;
+        clearLockout();
+    }
+
+    /**
+     * Checks {@code rawPassword} and records the attempt against the lockout counters. Never throws:
+     * the caller must persist this user before mapping the result to a response, otherwise the
+     * rollback discards the increment and the lockout never triggers.
+     */
+    public PasswordAuthenticationResult authenticate(
+            String rawPassword, SecretMatcher matcher, Instant now, LockoutPolicy policy) {
+        expireLockoutIfElapsed(now);
+
+        if (status != UserStatus.ACTIVE) {
+            return PasswordAuthenticationResult.ACCOUNT_INACTIVE;
+        }
+        if (isLockedAt(now)) {
+            return PasswordAuthenticationResult.ACCOUNT_LOCKED;
+        }
+        if (passwordHash == null) {
+            return PasswordAuthenticationResult.NO_PASSWORD_SET;
+        }
+        if (!matcher.matches(rawPassword, passwordHash)) {
+            failedLoginAttempts++;
+            if (failedLoginAttempts >= policy.maxFailedAttempts()) {
+                lockedUntil = now.plus(policy.lockDuration());
+                failedLoginAttempts = 0;
+                return PasswordAuthenticationResult.ACCOUNT_LOCKED;
+            }
+            return PasswordAuthenticationResult.BAD_CREDENTIALS;
+        }
+
+        clearLockout();
+        return PasswordAuthenticationResult.SUCCESS;
+    }
+
+    /** Verifies the current password without touching the lockout counters (re-authentication). */
+    public boolean matchesCurrentPassword(String rawPassword, SecretMatcher matcher) {
+        return passwordHash != null && matcher.matches(rawPassword, passwordHash);
+    }
+
+    public boolean isLockedAt(Instant now) {
+        return lockedUntil != null && now.isBefore(lockedUntil);
+    }
+
+    private void expireLockoutIfElapsed(Instant now) {
+        if (lockedUntil != null && !now.isBefore(lockedUntil)) {
+            clearLockout();
+        }
+    }
+
+    private void clearLockout() {
+        this.failedLoginAttempts = 0;
+        this.lockedUntil = null;
     }
 
     public UserId getId() {
@@ -46,6 +139,26 @@ public class User {
 
     public UserStatus getStatus() {
         return status;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public Instant getPasswordUpdatedAt() {
+        return passwordUpdatedAt;
+    }
+
+    public int getFailedLoginAttempts() {
+        return failedLoginAttempts;
+    }
+
+    public Instant getLockedUntil() {
+        return lockedUntil;
+    }
+
+    public boolean hasPassword() {
+        return passwordHash != null;
     }
 
     public boolean isActive() {

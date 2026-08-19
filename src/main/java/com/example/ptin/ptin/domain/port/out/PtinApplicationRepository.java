@@ -15,5 +15,8 @@ public interface PtinApplicationRepository {
 
     List<PtinApplication> findByStatus(PtinStatus status);
 
+    /** The ISSUED application carrying this TIN, if any. Used to resolve a TIN back to its owner. */
+    Optional<PtinApplication> findIssuedByTin(String tin);
+
     PtinApplication save(PtinApplication application);
 }

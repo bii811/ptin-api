@@ -30,7 +30,13 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .cors(cors -> cors.configurationSource(corsConfig.corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/register/**", "/api/v1/auth/login/**", "/actuator/health")
+                        .requestMatchers(
+                                "/api/v1/auth/register/**",
+                                "/api/v1/auth/login/**",
+                                // Recovery is by definition unauthenticated; it is gated on
+                                // TIN + registered mobile number + OTP instead.
+                                "/api/v1/auth/forgot-password/**",
+                                "/actuator/health")
                         .permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

@@ -11,5 +11,11 @@ public interface UserRepository {
 
     Optional<User> findById(UserId id);
 
+    /**
+     * Loads a user under a write lock so concurrent password attempts serialise on the failed-attempt
+     * counter instead of racing. Must be called inside a transaction.
+     */
+    Optional<User> lockById(UserId id);
+
     User save(User user);
 }

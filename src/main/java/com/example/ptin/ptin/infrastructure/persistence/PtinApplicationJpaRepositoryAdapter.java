@@ -37,6 +37,11 @@ class PtinApplicationJpaRepositoryAdapter implements PtinApplicationRepository {
     }
 
     @Override
+    public Optional<PtinApplication> findIssuedByTin(String tin) {
+        return jpaRepository.findFirstByTinAndStatus(tin, PtinStatus.ISSUED.name()).map(mapper::toDomain);
+    }
+
+    @Override
     public PtinApplication save(PtinApplication application) {
         PtinApplicationJpaEntity entity = jpaRepository.findById(application.getId().value())
                 .map(existing -> {

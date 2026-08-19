@@ -6,7 +6,4 @@ public interface RequestRegistrationOtpUseCase {
 
     record RequestRegistrationOtpCommand(String mobileNumber) {
     }
-
-    record OtpIssued(String otpCode) {
-    }
 }

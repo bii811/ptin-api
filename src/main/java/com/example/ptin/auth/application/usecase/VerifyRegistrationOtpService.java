@@ -1,19 +1,14 @@
 package com.example.ptin.auth.application.usecase;
 
 import com.example.ptin.auth.domain.event.UserRegisteredEvent;
-import com.example.ptin.auth.domain.exception.InvalidOtpException;
 import com.example.ptin.auth.domain.exception.UserNotFoundException;
 import com.example.ptin.auth.domain.model.MobileNumber;
-import com.example.ptin.auth.domain.model.OtpChallenge;
 import com.example.ptin.auth.domain.model.OtpPurpose;
 import com.example.ptin.auth.domain.model.User;
 import com.example.ptin.auth.domain.port.in.VerifyRegistrationOtpUseCase;
-import com.example.ptin.auth.domain.port.out.OtpChallengeRepository;
 import com.example.ptin.auth.domain.port.out.UserRepository;
 import com.example.ptin.shared.identity.UserId;
-import java.time.Instant;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,18 +17,15 @@ import org.springframework.transaction.annotation.Transactional;
 class VerifyRegistrationOtpService implements VerifyRegistrationOtpUseCase {
 
     private final UserRepository userRepository;
-    private final OtpChallengeRepository otpChallengeRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final OtpChallengeTransactionalGateway otpVerification;
     private final ApplicationEventPublisher eventPublisher;
 
     VerifyRegistrationOtpService(
             UserRepository userRepository,
-            OtpChallengeRepository otpChallengeRepository,
-            PasswordEncoder passwordEncoder,
+            OtpChallengeTransactionalGateway otpVerification,
             ApplicationEventPublisher eventPublisher) {
         this.userRepository = userRepository;
-        this.otpChallengeRepository = otpChallengeRepository;
-        this.passwordEncoder = passwordEncoder;
+        this.otpVerification = otpVerification;
         this.eventPublisher = eventPublisher;
     }
 
@@ -42,19 +34,19 @@ class VerifyRegistrationOtpService implements VerifyRegistrationOtpUseCase {
         MobileNumber mobileNumber = new MobileNumber(command.mobileNumber());
         User user = userRepository.findByMobileNumber(mobileNumber)
                 .orElseThrow(() -> new UserNotFoundException(mobileNumber.toString()));
-        OtpChallenge challenge = otpChallengeRepository.findActiveChallenge(mobileNumber, OtpPurpose.REGISTRATION)
-                .orElseThrow(InvalidOtpException::new);
 
-        try {
-            challenge.verify(command.otpCode(), passwordEncoder::matches, Instant.now());
-        } finally {
-            otpChallengeRepository.save(challenge);
-        }
+        boolean alreadyActive = user.isActive();
+        otpVerification
+                .verifyAndConsume(mobileNumber, OtpPurpose.REGISTRATION, command.otpCode())
+                .ensureSuccess();
 
         user.activate();
         userRepository.save(user);
 
-        eventPublisher.publishEvent(new UserRegisteredEvent(user.getId()));
+        // Only on the first activation, so a replayed verification cannot spawn a second profile.
+        if (!alreadyActive) {
+            eventPublisher.publishEvent(new UserRegisteredEvent(user.getId()));
+        }
         return user.getId();
     }
 }

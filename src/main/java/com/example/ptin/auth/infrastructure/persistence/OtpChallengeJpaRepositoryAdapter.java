@@ -4,6 +4,8 @@ import com.example.ptin.auth.domain.model.MobileNumber;
 import com.example.ptin.auth.domain.model.OtpChallenge;
 import com.example.ptin.auth.domain.model.OtpPurpose;
 import com.example.ptin.auth.domain.port.out.OtpChallengeRepository;
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;
 
@@ -19,11 +21,25 @@ class OtpChallengeJpaRepositoryAdapter implements OtpChallengeRepository {
     }
 
     @Override
-    public Optional<OtpChallenge> findActiveChallenge(MobileNumber mobileNumber, OtpPurpose purpose) {
+    public Optional<OtpChallenge> lockActiveChallenge(MobileNumber mobileNumber, OtpPurpose purpose) {
         return jpaRepository
                 .findFirstByMobileNumberAndPurposeAndConsumedAtIsNullOrderByCreatedAtDesc(
                         mobileNumber.value(), purpose.name())
                 .map(mapper::toDomain);
+    }
+
+    @Override
+    public List<OtpChallenge> findUnconsumed(MobileNumber mobileNumber, OtpPurpose purpose) {
+        return jpaRepository
+                .findByMobileNumberAndPurposeAndConsumedAtIsNull(mobileNumber.value(), purpose.name())
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<Instant> findIssueTimestampsSince(MobileNumber mobileNumber, OtpPurpose purpose, Instant since) {
+        return jpaRepository.findIssueTimestampsSince(mobileNumber.value(), purpose.name(), since);
     }
 
     @Override

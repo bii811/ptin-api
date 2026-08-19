@@ -1,8 +1,5 @@
 package com.example.ptin.auth.domain.model;
 
-import com.example.ptin.auth.domain.exception.InvalidOtpException;
-import com.example.ptin.auth.domain.exception.OtpAttemptsExceededException;
-import com.example.ptin.auth.domain.exception.OtpExpiredException;
 import java.time.Instant;
 
 public class OtpChallenge {
@@ -53,21 +50,40 @@ public class OtpChallenge {
         return new OtpChallenge(id, mobileNumber, purpose, hashedCode, expiresAt, maxAttempts, attemptCount, consumedAt);
     }
 
-    public void verify(String candidateCode, OtpCodeMatcher matcher, Instant now) {
+    /**
+     * Spends one attempt against this challenge and reports the outcome. Never throws: the caller
+     * must persist the mutated attempt count (and {@code consumedAt}) before turning a failure into
+     * an error response, otherwise the rollback wipes the counter and the ceiling never bites.
+     */
+    public OtpVerificationResult verify(String candidateCode, SecretMatcher matcher, Instant now) {
         if (consumedAt != null) {
-            throw new InvalidOtpException();
+            return OtpVerificationResult.ALREADY_CONSUMED;
         }
-        if (now.isAfter(expiresAt)) {
-            throw new OtpExpiredException();
+        if (!now.isBefore(expiresAt)) {
+            return OtpVerificationResult.EXPIRED;
         }
         if (attemptCount >= maxAttempts) {
-            throw new OtpAttemptsExceededException();
+            return OtpVerificationResult.ATTEMPTS_EXCEEDED;
         }
+
+        attemptCount++;
         if (!matcher.matches(candidateCode, hashedCode)) {
-            attemptCount++;
-            throw new InvalidOtpException();
+            return attemptCount >= maxAttempts
+                    ? OtpVerificationResult.ATTEMPTS_EXCEEDED
+                    : OtpVerificationResult.CODE_MISMATCH;
         }
         consumedAt = now;
+        return OtpVerificationResult.SUCCESS;
+    }
+
+    /**
+     * Burns an outstanding challenge without spending an attempt, so that issuing a replacement code
+     * immediately retires the previous one instead of leaving it valid until its TTL runs out.
+     */
+    public void invalidate(Instant now) {
+        if (consumedAt == null) {
+            consumedAt = now;
+        }
     }
 
     public OtpChallengeId getId() {

@@ -17,12 +17,25 @@ security:
   jwt:
     secret: ${PTIN_JWT_SECRET:ZmFrZS1kZXYtb25seS1zZWNyZXQta2V5LWNoYW5nZS1pbi1wcm9kLTEyMzQ1Ng==}
     access-token-expiry-seconds: ${PTIN_JWT_EXPIRY_SECONDS:86400}
+    issuer: ${PTIN_JWT_ISSUER:ptin-api}
 
 otp:
   code-length: 6
-  ttl-seconds: 300
+  ttl: 5m
   max-attempts: 5
+  # Throttling for the unauthenticated OTP-request endpoints (SMS bombing / table growth).
+  resend-cooldown: 60s
+  max-requests-per-window: 5
+  request-window: 1h
   expose-in-response: true
+  # Answer OTP requests for unknown accounts as if they succeeded, so the endpoints cannot be used
+  # to enumerate registered mobile numbers. Off by default so non-prod testing stays legible.
+  conceal-account-existence: false
+
+auth:
+  password:
+    max-failed-attempts: 5
+    lock-duration: 15m
 
 ptin:
   mediation:

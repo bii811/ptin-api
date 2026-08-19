@@ -5,3 +5,4 @@ logging:
 
 otp:
   expose-in-response: false
+  conceal-account-existence: true

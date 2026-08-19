@@ -29,6 +29,11 @@ class UserJpaRepositoryAdapter implements UserRepository {
     }
 
     @Override
+    public Optional<User> lockById(UserId id) {
+        return jpaRepository.findWithLockById(id.value()).map(mapper::toDomain);
+    }
+
+    @Override
     public User save(User user) {
         UserJpaEntity entity = jpaRepository.findById(user.getId().value())
                 .map(existing -> {
