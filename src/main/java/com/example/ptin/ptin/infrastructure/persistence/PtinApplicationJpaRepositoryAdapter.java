@@ -2,11 +2,14 @@ package com.example.ptin.ptin.infrastructure.persistence;
 
 import com.example.ptin.ptin.domain.model.PtinApplication;
 import com.example.ptin.ptin.domain.model.PtinApplicationId;
+import com.example.ptin.ptin.domain.model.PtinApplicationSearchCriteria;
 import com.example.ptin.ptin.domain.model.PtinStatus;
 import com.example.ptin.ptin.domain.port.out.PtinApplicationRepository;
 import com.example.ptin.shared.identity.UserId;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -32,8 +35,20 @@ class PtinApplicationJpaRepositoryAdapter implements PtinApplicationRepository {
     }
 
     @Override
+    public List<PtinApplication> findAll() {
+        return jpaRepository.findAll().stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
     public List<PtinApplication> findByStatus(PtinStatus status) {
         return jpaRepository.findByStatus(status.name()).stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
+    public Page<PtinApplication> search(PtinApplicationSearchCriteria criteria, Pageable pageable) {
+        return jpaRepository
+                .findAll(PtinApplicationSpecifications.from(criteria), pageable)
+                .map(mapper::toDomain);
     }
 
     @Override

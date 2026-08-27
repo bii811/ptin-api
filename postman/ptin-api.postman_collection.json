@@ -298,14 +298,39 @@
           }
         },
         {
-          "name": "List Pending Applications",
+          "name": "List Applications (status filter)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/ptin/applications",
+              "raw": "{{baseUrl}}/api/v1/ptin/applications?status=pending",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "ptin", "applications"]
+              "path": ["api", "v1", "ptin", "applications"],
+              "query": [
+                { "key": "status", "value": "pending", "description": "all | pending | approve | reject | retry" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Applications (paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ptin/applications/search?page=0&size=20&status=PENDING_APPROVAL",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "ptin", "applications", "search"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" },
+                { "key": "status", "value": "PENDING_APPROVAL", "description": "Optional: PENDING_APPROVAL | APPROVED | REJECTED | ISSUED | ISSUANCE_FAILED" },
+                { "key": "tin", "value": "", "disabled": true },
+                { "key": "applicantName", "value": "", "disabled": true },
+                { "key": "submittedFrom", "value": "", "disabled": true, "description": "ISO-8601 instant, e.g. 2026-01-01T00:00:00Z" },
+                { "key": "submittedTo", "value": "", "disabled": true },
+                { "key": "sort", "value": "submittedAt,desc", "disabled": true }
+              ]
             }
           }
         },

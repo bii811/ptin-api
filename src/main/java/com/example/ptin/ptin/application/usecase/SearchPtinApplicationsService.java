@@ -1,27 +1,28 @@
 package com.example.ptin.ptin.application.usecase;
 
 import com.example.ptin.ptin.domain.model.PtinApplication;
-import com.example.ptin.ptin.domain.model.PtinStatus;
-import com.example.ptin.ptin.domain.port.in.ListPendingPtinApplicationsUseCase;
+import com.example.ptin.ptin.domain.model.PtinApplicationSearchCriteria;
+import com.example.ptin.ptin.domain.port.in.SearchPtinApplicationsUseCase;
 import com.example.ptin.ptin.domain.port.out.PtinApplicationRepository;
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
-class ListPendingPtinApplicationsService implements ListPendingPtinApplicationsUseCase {
+class SearchPtinApplicationsService implements SearchPtinApplicationsUseCase {
 
     private final PtinApplicationRepository ptinApplicationRepository;
 
-    ListPendingPtinApplicationsService(PtinApplicationRepository ptinApplicationRepository) {
+    SearchPtinApplicationsService(PtinApplicationRepository ptinApplicationRepository) {
         this.ptinApplicationRepository = ptinApplicationRepository;
     }
 
     @Override
     @PreAuthorize("hasRole('AUTHORIZER')")
-    public List<PtinApplication> listPending() {
-        return ptinApplicationRepository.findByStatus(PtinStatus.PENDING_APPROVAL);
+    public Page<PtinApplication> search(PtinApplicationSearchCriteria criteria, Pageable pageable) {
+        return ptinApplicationRepository.search(criteria, pageable);
     }
 }
