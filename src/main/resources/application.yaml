@@ -17,6 +17,8 @@ security:
   jwt:
     secret: ${PTIN_JWT_SECRET:ZmFrZS1kZXYtb25seS1zZWNyZXQta2V5LWNoYW5nZS1pbi1wcm9kLTEyMzQ1Ng==}
     access-token-expiry-seconds: ${PTIN_JWT_EXPIRY_SECONDS:86400}
+    # Registration / password-reset tokens handed out between OTP verification and the final step.
+    flow-token-expiry-seconds: 600
     issuer: ${PTIN_JWT_ISSUER:ptin-api}
 
 otp:
@@ -28,9 +30,6 @@ otp:
   max-requests-per-window: 5
   request-window: 1h
   expose-in-response: true
-  # Answer OTP requests for unknown accounts as if they succeeded, so the endpoints cannot be used
-  # to enumerate registered mobile numbers. Off by default so non-prod testing stays legible.
-  conceal-account-existence: false
 
 auth:
   password:

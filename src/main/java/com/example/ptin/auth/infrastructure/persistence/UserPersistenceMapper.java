@@ -19,7 +19,8 @@ class UserPersistenceMapper {
                 user.getPasswordHash(),
                 user.getPasswordUpdatedAt(),
                 user.getFailedLoginAttempts(),
-                user.getLockedUntil());
+                user.getLockedUntil(),
+                user.isMustChangePassword());
     }
 
     void updateEntity(UserJpaEntity entity, User user) {
@@ -28,6 +29,7 @@ class UserPersistenceMapper {
         entity.setPasswordUpdatedAt(user.getPasswordUpdatedAt());
         entity.setFailedLoginAttempts(user.getFailedLoginAttempts());
         entity.setLockedUntil(user.getLockedUntil());
+        entity.setMustChangePassword(user.isMustChangePassword());
     }
 
     User toDomain(UserJpaEntity entity) {
@@ -39,6 +41,7 @@ class UserPersistenceMapper {
                 entity.getPasswordHash(),
                 entity.getPasswordUpdatedAt(),
                 entity.getFailedLoginAttempts(),
-                entity.getLockedUntil());
+                entity.getLockedUntil(),
+                entity.isMustChangePassword());
     }
 }

@@ -1,10 +1,10 @@
 package com.example.ptin.auth.domain.port.in;
 
-/** Step one of forgotten-password recovery: TIN + registered mobile number, answered with an OTP. */
+/** Forgotten-password step A. Answers identically whether or not the account exists. */
 public interface RequestPasswordResetOtpUseCase {
 
     OtpIssued requestOtp(RequestPasswordResetOtpCommand command);
 
-    record RequestPasswordResetOtpCommand(String tin, String mobileNumber) {
+    record RequestPasswordResetOtpCommand(String mobileNumber) {
     }
 }

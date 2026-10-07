@@ -5,7 +5,6 @@ logging:
 
 otp:
   expose-in-response: true
-  conceal-account-existence: false
 
 ptin:
   mediation:

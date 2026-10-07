@@ -1,8 +1,8 @@
 package com.example.ptin.auth.application.usecase;
 
-import com.example.ptin.auth.domain.exception.InvalidCredentialsException;
-import com.example.ptin.auth.domain.model.MobileNumber;
+import com.example.ptin.auth.domain.exception.InvalidFlowTokenException;
 import com.example.ptin.auth.domain.model.OtpPurpose;
+import com.example.ptin.auth.domain.model.PasswordStrength;
 import com.example.ptin.auth.domain.model.RawPassword;
 import com.example.ptin.auth.domain.model.User;
 import com.example.ptin.auth.domain.port.in.ResetPasswordUseCase;
@@ -13,45 +13,42 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Forgotten-password step two: TIN + registered mobile number + OTP installs a new password. Also
- * clears any standing lockout, so a user who was locked out by an attacker can recover immediately.
+ * Forgotten-password step C. Also clears any standing lockout, so a user locked out by an attacker
+ * can recover immediately.
  */
 @Service
 @Transactional
 class ResetPasswordService implements ResetPasswordUseCase {
 
-    private final PasswordResetAccountResolver accountResolver;
-    private final OtpChallengeTransactionalGateway otpVerification;
     private final UserRepository userRepository;
+    private final AuthTokenIssuer tokenIssuer;
     private final PasswordEncoder passwordEncoder;
     private final Clock clock;
 
     ResetPasswordService(
-            PasswordResetAccountResolver accountResolver,
-            OtpChallengeTransactionalGateway otpVerification,
-            UserRepository userRepository,
-            PasswordEncoder passwordEncoder,
-            Clock clock) {
-        this.accountResolver = accountResolver;
-        this.otpVerification = otpVerification;
+            UserRepository userRepository, AuthTokenIssuer tokenIssuer, PasswordEncoder passwordEncoder, Clock clock) {
         this.userRepository = userRepository;
+        this.tokenIssuer = tokenIssuer;
         this.passwordEncoder = passwordEncoder;
         this.clock = clock;
     }
 
     @Override
-    public void resetPassword(ResetPasswordCommand command) {
-        MobileNumber claimedNumber = new MobileNumber(command.mobileNumber());
-        // Validate the new password before spending the OTP, so a policy rejection does not force the
-        // user to request a fresh code.
+    public PasswordStrength resetPassword(ResetPasswordCommand command) {
+        var redeemed = tokenIssuer.redeemFlowToken(OtpPurpose.PASSWORD_RESET, command.resetToken());
         RawPassword newPassword = new RawPassword(command.newPassword());
 
-        User user = accountResolver.resolve(command.tin(), claimedNumber).orElseThrow(InvalidCredentialsException::new);
-        otpVerification
-                .verifyAndConsume(user.getMobileNumber(), OtpPurpose.PASSWORD_RESET, command.otpCode())
-                .ensureSuccess();
+        User user = userRepository.findByMobileNumber(redeemed.mobileNumber())
+                .filter(User::isActive)
+                .orElseThrow(InvalidFlowTokenException::new);
+        // Single use: a token issued before the last password change has already been spent (or
+        // superseded), so a leaked token cannot reset the password a second time.
+        if (user.getPasswordUpdatedAt() != null && !redeemed.issuedAt().isAfter(user.getPasswordUpdatedAt())) {
+            throw new InvalidFlowTokenException();
+        }
 
         user.changePassword(passwordEncoder.encode(newPassword.value()), clock.instant());
         userRepository.save(user);
+        return newPassword.strength();
     }
 }

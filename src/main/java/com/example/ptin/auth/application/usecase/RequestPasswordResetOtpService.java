@@ -1,54 +1,49 @@
 package com.example.ptin.auth.application.usecase;
 
-import com.example.ptin.auth.config.OtpProperties;
-import com.example.ptin.auth.domain.exception.InvalidCredentialsException;
+import com.example.ptin.auth.domain.exception.OtpRequestThrottledException;
 import com.example.ptin.auth.domain.model.MobileNumber;
 import com.example.ptin.auth.domain.model.OtpPurpose;
+import com.example.ptin.auth.domain.model.User;
 import com.example.ptin.auth.domain.port.in.OtpIssued;
 import com.example.ptin.auth.domain.port.in.RequestPasswordResetOtpUseCase;
 import com.example.ptin.auth.domain.port.out.OtpSender;
+import com.example.ptin.auth.domain.port.out.UserRepository;
 import org.springframework.stereotype.Service;
 
 /**
- * Forgotten-password step one. The caller must supply both the TIN and the mobile number registered
- * against it; the OTP is only ever sent to the number already on the account, never to one supplied
- * by the caller.
+ * Forgotten-password step A. Always answers the same way: an unknown number gets nothing sent, and a
+ * throttled known number is swallowed too, since a 429 would otherwise reveal the account exists.
  *
  * <p>Not {@code @Transactional} — the SMS dispatch stays outside the OTP issuer's transaction.
  */
 @Service
 class RequestPasswordResetOtpService implements RequestPasswordResetOtpUseCase {
 
-    private final PasswordResetAccountResolver accountResolver;
+    private final UserRepository userRepository;
     private final OtpChallengeIssuer otpChallengeIssuer;
     private final OtpSender otpSender;
-    private final OtpProperties properties;
 
     RequestPasswordResetOtpService(
-            PasswordResetAccountResolver accountResolver,
-            OtpChallengeIssuer otpChallengeIssuer,
-            OtpSender otpSender,
-            OtpProperties properties) {
-        this.accountResolver = accountResolver;
+            UserRepository userRepository, OtpChallengeIssuer otpChallengeIssuer, OtpSender otpSender) {
+        this.userRepository = userRepository;
         this.otpChallengeIssuer = otpChallengeIssuer;
         this.otpSender = otpSender;
-        this.properties = properties;
     }
 
     @Override
     public OtpIssued requestOtp(RequestPasswordResetOtpCommand command) {
-        MobileNumber claimedNumber = new MobileNumber(command.mobileNumber());
-        var account = accountResolver.resolve(command.tin(), claimedNumber);
-        if (account.isEmpty()) {
-            if (properties.concealAccountExistence()) {
-                return OtpIssued.suppressed();
-            }
-            throw new InvalidCredentialsException();
+        MobileNumber mobileNumber = new MobileNumber(command.mobileNumber());
+        if (userRepository.findByMobileNumber(mobileNumber).filter(User::isActive).isEmpty()) {
+            return OtpIssued.suppressed();
         }
 
-        MobileNumber registeredNumber = account.get().getMobileNumber();
-        String plainCode = otpChallengeIssuer.issue(registeredNumber, OtpPurpose.PASSWORD_RESET);
-        otpSender.send(registeredNumber, plainCode);
+        String plainCode;
+        try {
+            plainCode = otpChallengeIssuer.issue(mobileNumber, OtpPurpose.PASSWORD_RESET);
+        } catch (OtpRequestThrottledException e) {
+            return OtpIssued.suppressed();
+        }
+        otpSender.send(mobileNumber, plainCode);
         return OtpIssued.sent(plainCode);
     }
 }

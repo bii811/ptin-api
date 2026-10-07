@@ -6,6 +6,9 @@ import java.nio.charset.StandardCharsets;
 /**
  * A user-supplied plaintext password, validated at construction so no unchecked string can reach the
  * hasher. Never log or serialise one — {@link #toString()} is redacted for exactly that reason.
+ *
+ * <p>Only length is enforced; missing complexity is reported through {@link #strength()} instead of
+ * being rejected.
  */
 public record RawPassword(String value) {
 
@@ -24,12 +27,13 @@ public record RawPassword(String value) {
         if (value.getBytes(StandardCharsets.UTF_8).length > MAX_BYTES) {
             throw new PasswordPolicyViolationException("Password must not exceed " + MAX_BYTES + " bytes");
         }
-        if (value.chars().noneMatch(Character::isLetter) || value.chars().noneMatch(Character::isDigit)) {
-            throw new PasswordPolicyViolationException("Password must contain at least one letter and one digit");
-        }
-        if (value.chars().anyMatch(Character::isWhitespace)) {
-            throw new PasswordPolicyViolationException("Password must not contain whitespace");
-        }
+    }
+
+    public PasswordStrength strength() {
+        boolean mixed = value.chars().anyMatch(Character::isUpperCase)
+                && value.chars().anyMatch(Character::isLowerCase)
+                && value.chars().anyMatch(Character::isDigit);
+        return mixed ? PasswordStrength.STRONG : PasswordStrength.WEAK;
     }
 
     @Override

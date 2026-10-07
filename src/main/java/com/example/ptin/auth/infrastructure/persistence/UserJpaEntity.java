@@ -45,6 +45,10 @@ public class UserJpaEntity extends AuditableJpaEntity {
     @Column(name = "locked_until")
     private Instant lockedUntil;
 
+    @Setter
+    @Column(name = "must_change_password", nullable = false)
+    private boolean mustChangePassword;
+
     public UserJpaEntity(
             UUID id,
             String mobileNumber,
@@ -53,7 +57,8 @@ public class UserJpaEntity extends AuditableJpaEntity {
             String passwordHash,
             Instant passwordUpdatedAt,
             int failedLoginAttempts,
-            Instant lockedUntil) {
+            Instant lockedUntil,
+            boolean mustChangePassword) {
         assignId(id);
         this.mobileNumber = mobileNumber;
         this.role = role;
@@ -62,5 +67,6 @@ public class UserJpaEntity extends AuditableJpaEntity {
         this.passwordUpdatedAt = passwordUpdatedAt;
         this.failedLoginAttempts = failedLoginAttempts;
         this.lockedUntil = lockedUntil;
+        this.mustChangePassword = mustChangePassword;
     }
 }

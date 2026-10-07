@@ -1,10 +1,9 @@
 package com.example.ptin.auth.domain.port.in;
 
-import com.example.ptin.shared.identity.UserId;
-
+/** Registration step B: a valid OTP is exchanged for a registration token. */
 public interface VerifyRegistrationOtpUseCase {
 
-    UserId verifyOtp(VerifyRegistrationOtpCommand command);
+    FlowToken verifyOtp(VerifyRegistrationOtpCommand command);
 
     record VerifyRegistrationOtpCommand(String mobileNumber, String otpCode) {
     }

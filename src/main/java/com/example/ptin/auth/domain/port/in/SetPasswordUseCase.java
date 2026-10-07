@@ -3,7 +3,7 @@ package com.example.ptin.auth.domain.port.in;
 import com.example.ptin.shared.identity.UserId;
 
 /**
- * Sets the initial password, or replaces an existing one. {@code currentPassword} is required only
+ * Sets the initial password (legacy OTP-only accounts), or replaces an existing one. {@code currentPassword} is required only
  * when a password is already set — on first use the caller has already proven identity via OTP login.
  */
 public interface SetPasswordUseCase {

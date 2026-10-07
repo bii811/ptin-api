@@ -1,7 +1,13 @@
 package com.example.ptin.auth.infrastructure.rest.request;
 
+import com.example.ptin.auth.domain.model.MobileNumber;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-public record LoginWithPasswordRequest(@NotBlank @Size(max = 12) String tin, @NotBlank String password) {
+/** Exactly one of {@code mobileNumber} / {@code tin} identifies the account. */
+public record LoginWithPasswordRequest(
+        @Pattern(regexp = MobileNumber.PATTERN, message = "must be a valid mobile number") String mobileNumber,
+        @Size(max = 12) String tin,
+        @NotBlank String password) {
 }

@@ -1,10 +1,13 @@
 package com.example.ptin.auth.domain.port.in;
 
-/** TIN + password login, available once the user has an issued TIN and has set a password. */
+/**
+ * Password login. The username is the mobile number, or — once a TIN has been issued to the
+ * account — the TIN. Exactly one of the two is set.
+ */
 public interface LoginWithPasswordUseCase {
 
-    AuthToken login(LoginWithPasswordCommand command);
+    LoginResult login(LoginWithPasswordCommand command);
 
-    record LoginWithPasswordCommand(String tin, String password) {
+    record LoginWithPasswordCommand(String mobileNumber, String tin, String password) {
     }
 }

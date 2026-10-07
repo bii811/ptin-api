@@ -17,6 +17,9 @@ public class User {
     private int failedLoginAttempts;
     private Instant lockedUntil;
 
+    /** True while the password is a support-assigned temporary one that must be replaced before login. */
+    private boolean mustChangePassword;
+
     private User(
             UserId id,
             MobileNumber mobileNumber,
@@ -25,7 +28,8 @@ public class User {
             String passwordHash,
             Instant passwordUpdatedAt,
             int failedLoginAttempts,
-            Instant lockedUntil) {
+            Instant lockedUntil,
+            boolean mustChangePassword) {
         this.id = id;
         this.mobileNumber = mobileNumber;
         this.role = role;
@@ -34,12 +38,13 @@ public class User {
         this.passwordUpdatedAt = passwordUpdatedAt;
         this.failedLoginAttempts = failedLoginAttempts;
         this.lockedUntil = lockedUntil;
+        this.mustChangePassword = mustChangePassword;
     }
 
     public static User register(MobileNumber mobileNumber) {
         // Public self-registration can only ever create an APPLICANT; AUTHORIZER accounts are provisioned out-of-band.
         return new User(
-                UserId.generate(), mobileNumber, UserRole.APPLICANT, UserStatus.PENDING_VERIFICATION, null, null, 0, null);
+                UserId.generate(), mobileNumber, UserRole.APPLICANT, UserStatus.PENDING_VERIFICATION, null, null, 0, null, false);
     }
 
     public static User reconstitute(
@@ -50,9 +55,18 @@ public class User {
             String passwordHash,
             Instant passwordUpdatedAt,
             int failedLoginAttempts,
-            Instant lockedUntil) {
+            Instant lockedUntil,
+            boolean mustChangePassword) {
         return new User(
-                id, mobileNumber, role, status, passwordHash, passwordUpdatedAt, failedLoginAttempts, lockedUntil);
+                id,
+                mobileNumber,
+                role,
+                status,
+                passwordHash,
+                passwordUpdatedAt,
+                failedLoginAttempts,
+                lockedUntil,
+                mustChangePassword);
     }
 
     /** Idempotent: re-verifying an already-active account is a no-op, not an error. */
@@ -70,7 +84,17 @@ public class User {
         }
         this.passwordHash = newPasswordHash;
         this.passwordUpdatedAt = now;
+        this.mustChangePassword = false;
         clearLockout();
+    }
+
+    /**
+     * Support-assigned fallback for a user who cannot receive an OTP. Logging in with it yields a
+     * password-reset token instead of a session, so the user must choose their own password.
+     */
+    public void assignTemporaryPassword(String temporaryPasswordHash, Instant now) {
+        changePassword(temporaryPasswordHash, now);
+        this.mustChangePassword = true;
     }
 
     /**
@@ -155,6 +179,10 @@ public class User {
 
     public Instant getLockedUntil() {
         return lockedUntil;
+    }
+
+    public boolean isMustChangePassword() {
+        return mustChangePassword;
     }
 
     public boolean hasPassword() {

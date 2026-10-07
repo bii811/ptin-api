@@ -1,10 +1,12 @@
 package com.example.ptin.auth.domain.port.in;
 
-/** Step two of forgotten-password recovery: TIN + mobile number + OTP sets the new password. */
+import com.example.ptin.auth.domain.model.PasswordStrength;
+
+/** Forgotten-password step C: password-reset token + new password. */
 public interface ResetPasswordUseCase {
 
-    void resetPassword(ResetPasswordCommand command);
+    PasswordStrength resetPassword(ResetPasswordCommand command);
 
-    record ResetPasswordCommand(String tin, String mobileNumber, String otpCode, String newPassword) {
+    record ResetPasswordCommand(String resetToken, String newPassword) {
     }
 }

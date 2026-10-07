@@ -26,6 +26,11 @@ Always use the Gradle wrapper (`./gradlew`), not a system-installed `gradle`.
 datasource. Start one locally first: `docker-compose up -d` (starts `ptin-postgres` on `localhost:5433`,
 db/user/password all `ptin`).
 
+### First-time DB setup
+
+Flyway creates the schema on first boot. Then seed the first admin (no password; set it via
+forgot-password): `psql ... -v admin_mobile=20XXXXXXXX -f scripts/init-db.sql`.
+
 ### Docker images
 
 `Dockerfile` is a multi-stage build (Gradle build stage → `eclipse-temurin:21-jre` runtime) with a
@@ -47,14 +52,10 @@ overlay only non-secret, environment-specific behavior (logging levels, `otp.exp
 (injected by the deployment platform at runtime); profile YAML files are for behavioral differences
 only, never for secrets.**
 
-Two auth toggles differ per environment:
+One auth toggle differs per environment:
 
 - `otp.expose-in-response` (`true` by default and in `uat`, `false` in `prod`) — echo the plaintext
   OTP in the API response `message`, for environments without a real SMS gateway wired up.
-- `otp.conceal-account-existence` (`false` by default and in `uat`, `true` in `prod`) — answer OTP
-  requests for unknown accounts with a normal-looking success instead of 404/401, so the endpoints
-  cannot be used to enumerate registered mobile numbers or TINs. Off in non-prod so testing stays
-  legible.
 
 The remaining OTP/password policy lives in `otp.*` and `auth.password.*` and is bound to the
 `OtpProperties` / `PasswordLoginProperties` records in `auth/config` (durations are ISO/Boot duration
@@ -120,18 +121,32 @@ in that gateway's Javadoc — read it before changing this flow:
 
 ### Auth model
 
-Two credentials, gated on whether a TIN exists yet:
+Each multi-step flow is a state machine: an OTP is exchanged for a short-lived signed **flow token**
+(JWT, `security.jwt.flow-token-expiry-seconds`, 10 min, `purpose` claim = `REGISTRATION` /
+`PASSWORD_RESET`, no role), and only that token unlocks the last step. `JwtTokenProvider.parse`
+rejects flow tokens and `parseFlowToken` rejects access tokens, so neither can stand in for the other.
 
-- **Phone + OTP** — the only credential before a TIN is issued, and the permanent fallback afterwards.
-  `/api/v1/auth/register/otp/request` + `/register/otp/verify` activates a new `APPLICANT`;
-  `/login/otp/request` + `/login/otp/verify` mints a JWT.
-- **TIN + password** — available once the user has an `ISSUED` PTIN. `POST /api/v1/auth/password`
-  (authenticated) sets it; `/login/password` then accepts `{tin, password}`. Setting a password is
-  optional and never disables the OTP path. Replacing an existing password requires
-  `currentPassword`; the initial set does not, because reaching it already required an OTP login.
-- **Forgotten password** — `/forgot-password/otp/request` takes `{tin, mobileNumber}` and only ever
-  sends the code to the number already registered on that account; `/forgot-password/reset` then
-  takes `{tin, mobileNumber, otpCode, newPassword}`. A reset also clears any standing lockout.
+- **Register** — `/register/otp/request` (409 if the number is already active; no row is written) →
+  `/register/otp/verify` (returns registration token) → `/register/complete` `{registrationToken,
+  password}` creates the ACTIVE `APPLICANT` and publishes `UserRegisteredEvent`. Nothing durable exists
+  until `complete`, so a user who abandons after verify simply requests a fresh OTP and starts over.
+- **Login** — `/login/password` takes `{mobileNumber | tin, password}` (exactly one identifier; TIN
+  works once a PTIN is `ISSUED`). Unknown accounts burn a decoy BCrypt check and get the same 401 as a
+  wrong password. Lockout after `auth.password.max-failed-attempts` (423).
+- **Forgot password** — `/forgot-password/otp/request` always returns the generic success message
+  (unknown numbers and throttled requests are swallowed) → `/forgot-password/otp/verify` (returns reset
+  token) → `/forgot-password/reset` `{resetToken, newPassword}`; clears any lockout. A reset token is
+  single-use: it is rejected if issued before the user's `passwordUpdatedAt`.
+- **Temporary password (support fallback)** — `POST /api/v1/admin/users/temporary-password`
+  `{mobileNumber}` (`@PreAuthorize("hasRole('ADMIN')")`; `ADMIN` is provisioned out-of-band like
+  `AUTHORIZER`, and cannot target other admins) generates a random 12-char password, stores its hash
+  with `must_change_password = true`, and returns it once for the admin to relay. Logging in with it
+  returns `passwordChangeRequired: true` plus a `resetToken` instead of a session; the user spends it on
+  `/forgot-password/reset`, which clears the flag.
+- **Password policy** — 8 chars minimum (72 bytes max, BCrypt limit). Missing upper/lower/digit mix is
+  accepted but reported as `passwordStrength: WEAK` in the response.
+- `POST /api/v1/auth/password` (authenticated) changes the password; accounts that predate password
+  registration have none, so they onboard through forgot-password (OTP login no longer exists).
 
 `auth` learns about TINs through its own `TaxpayerTinLookupPort` (`infrastructure/acl/PtinTinLookupAdapter`
 → `ptin`'s `FindIssuedTinUseCase`), never by reaching into the `ptin` module.
@@ -139,8 +154,8 @@ Two credentials, gated on whether a TIN exists yet:
 OTP codes are generated in-memory, hashed with BCrypt before persisting (`OtpChallenge` never stores
 the plaintext code), and sent via the `OtpSender` port — `LoggingOtpSenderAdapter` is a placeholder
 that just logs the code; swap it for a real SMS gateway per environment via `@Profile` if/when one
-exists (no `@Profile`-based adapter swapping exists yet — this would be the first). All three OTP
-flows issue through the single `OtpChallengeIssuer`, which enforces the resend cooldown and
+exists (no `@Profile`-based adapter swapping exists yet — this would be the first). Both OTP
+flows (registration, password reset) issue through the single `OtpChallengeIssuer`, which enforces the resend cooldown and
 per-window rate limit and retires any still-outstanding code for the same number+purpose.
 
 **Failed-attempt counters must be committed in their own transaction.** `OtpChallengeTransactionalGateway`

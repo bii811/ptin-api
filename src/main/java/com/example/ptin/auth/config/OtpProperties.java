@@ -13,9 +13,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param maxRequestsPerWindow    OTP requests allowed per number/purpose within {@code requestWindow}
  * @param requestWindow           the rate-limiting window
  * @param exposeInResponse        echo the plaintext code in the API response (no SMS gateway wired up)
- * @param concealAccountExistence answer OTP requests for unknown accounts with a normal-looking
- *                                success instead of 404, so the endpoint cannot be used to
- *                                enumerate registered mobile numbers
  */
 @ConfigurationProperties(prefix = "otp")
 public record OtpProperties(
@@ -25,6 +22,5 @@ public record OtpProperties(
         Duration resendCooldown,
         int maxRequestsPerWindow,
         Duration requestWindow,
-        boolean exposeInResponse,
-        boolean concealAccountExistence) {
+        boolean exposeInResponse) {
 }
