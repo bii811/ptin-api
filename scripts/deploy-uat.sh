@@ -4,6 +4,9 @@
 # container. Tails the new container's logs until Ctrl+C, at which point the
 # VPN tunnel used to reach the server is disconnected.
 #
+# Set CLEAN_DB=1 to also drop+recreate the ptin schema before starting the new
+# container (Flyway rebuilds it on boot) — see scripts/reset-deploy-uat.sh.
+#
 # Usage: ./scripts/deploy-uat.sh [--yes]
 set -euo pipefail
 
@@ -100,10 +103,21 @@ rm -f "$LOCAL_TAR" "$LOCAL_ENV"
 # 4-7. Stop old container, drop old image tag, load new image, run it.
 echo "Deploying on ${SERVER_HOST}..."
 sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=accept-new "${SERVER_USER}@${SERVER_HOST}" \
-  "IMAGE='$IMAGE' CONTAINER='$CONTAINER' TAR='$REMOTE_TAR' ENVFILE='$REMOTE_ENV' PORT='$HOST_PORT' bash -s" <<'EOF'
+  "CLEAN_DB='${CLEAN_DB:-}' IMAGE='$IMAGE' CONTAINER='$CONTAINER' TAR='$REMOTE_TAR' ENVFILE='$REMOTE_ENV' PORT='$HOST_PORT' bash -s" <<'EOF'
 set -euo pipefail
 echo "Stopping existing container (if any)..."
 docker rm -f "$CONTAINER" 2>/dev/null || true
+
+if [ -n "$CLEAN_DB" ]; then
+  echo "Dropping and recreating schema ptin..."
+  set -a; . "$ENVFILE"; set +a
+  # jdbc:postgresql://host:port/db?currentSchema=ptin
+  hostport="${PTIN_DB_URL#jdbc:postgresql://}"; hostport="${hostport%%/*}"
+  db="${PTIN_DB_URL#jdbc:postgresql://*/}"; db="${db%%\?*}"
+  docker run --rm --network host -e PGPASSWORD="$PTIN_DB_PASSWORD" postgres:17-alpine \
+    psql -v ON_ERROR_STOP=1 -h "${hostport%:*}" -p "${hostport#*:}" -U "$PTIN_DB_USERNAME" -d "$db" \
+    -c 'DROP SCHEMA IF EXISTS ptin CASCADE' -c 'CREATE SCHEMA ptin'
+fi
 
 echo "Removing existing image tag (if any)..."
 docker rmi "$IMAGE" 2>/dev/null || true
