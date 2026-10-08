@@ -5,34 +5,29 @@
 -- no mobile number, so there is no OTP/forgot-password flow for them.
 --
 -- The schema is owned by Flyway and is created when the application first starts, so run this AFTER the
--- first boot, pointing psql at that environment's DB. Passwords are passed as BCrypt hashes (never
--- plaintext, never committed). Generate one with:
+-- first boot, pointing psql at that environment's DB:
 --
---   htpasswd -bnBC 10 "" 'the-password' | tr -d ':\n' | sed 's/^\$2y/\$2a/'
+--   psql -h localhost -p 5433 -U ptin -d ptin -f scripts/init-db.sql
 --
---   psql -h localhost -p 5433 -U ptin -d ptin \
---        -v superadmin_password_hash='$2a$10$...' -v admin_password_hash='$2a$10$...' \
---        -f scripts/init-db.sql
+-- Passwords are BCrypt hashes (never plaintext). The defaults below are the shared initial passwords;
+-- override per environment with -v superadmin_password_hash='$2a$10$...' -v admin_password_hash='...'.
+-- Staff should change them after first login via POST /api/v1/auth/password.
 --
--- Either variable may be omitted to seed only the other one; at least one is required.
 -- Safe to re-run: an existing username is left untouched (to change a password, update password_hash by hand).
--- Staff change their own password afterwards via POST /api/v1/auth/password.
 
 \if :{?superadmin_password_hash}
-\elif :{?admin_password_hash}
 \else
-  \echo 'Usage: psql ... [-v superadmin_password_hash=<bcrypt>] [-v admin_password_hash=<bcrypt>] -f scripts/init-db.sql'
-  \quit
+  \set superadmin_password_hash '$2b$10$ZbWRkKkPr6f/hWHspG4q9uPZwWfX0hQa5xCFBWyGyc0hLs0K9UmLS'
+\endif
+\if :{?admin_password_hash}
+\else
+  \set admin_password_hash '$2b$10$59D9GLq9YGKwyPf.AfGa2uc4.dFC3xNQrGP3K25dLF2Z4MHNOVpra'
 \endif
 
-\if :{?superadmin_password_hash}
 INSERT INTO users (id, username, role, status, password_hash, password_updated_at, created_at, created_by, updated_at, updated_by)
 VALUES (gen_random_uuid(), 'superadmin', 'SUPERADMIN', 'ACTIVE', :'superadmin_password_hash', now(), now(), 'init-db', now(), 'init-db')
 ON CONFLICT (username) DO NOTHING;
-\endif
 
-\if :{?admin_password_hash}
 INSERT INTO users (id, username, role, status, password_hash, password_updated_at, created_at, created_by, updated_at, updated_by)
 VALUES (gen_random_uuid(), 'admin', 'ADMIN', 'ACTIVE', :'admin_password_hash', now(), now(), 'init-db', now(), 'init-db')
 ON CONFLICT (username) DO NOTHING;
-\endif

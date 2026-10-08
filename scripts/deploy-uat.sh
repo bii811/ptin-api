@@ -7,8 +7,7 @@
 # Set CLEAN_DB=1 to also drop+recreate the ptin schema before starting the new
 # container (Flyway rebuilds it on boot) — see scripts/reset-deploy-uat.sh.
 #
-# With CLEAN_DB=1 it then seeds the staff accounts (scripts/init-db.sql) once the app is healthy; the
-# BCrypt hashes come from SEED_SUPERADMIN_HASH / SEED_ADMIN_HASH (scripts/reset-deploy-uat.sh sets them).
+# With CLEAN_DB=1 it then seeds the staff accounts (scripts/init-db.sql) once the app is healthy.
 #
 # Usage: ./scripts/deploy-uat.sh [--yes]
 set -euo pipefail
@@ -112,7 +111,7 @@ rm -f "$LOCAL_TAR" "$LOCAL_ENV"
 # 4-7. Stop old container, drop old image tag, load new image, run it.
 echo "Deploying on ${SERVER_HOST}..."
 sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=accept-new "${SERVER_USER}@${SERVER_HOST}" \
-  "CLEAN_DB='${CLEAN_DB:-}' SEED_SUPERADMIN_HASH='${SEED_SUPERADMIN_HASH:-}' SEED_ADMIN_HASH='${SEED_ADMIN_HASH:-}' SEED='$REMOTE_SEED' IMAGE='$IMAGE' CONTAINER='$CONTAINER' TAR='$REMOTE_TAR' ENVFILE='$REMOTE_ENV' PORT='$HOST_PORT' bash -s" <<'EOF'
+  "CLEAN_DB='${CLEAN_DB:-}' SEED='$REMOTE_SEED' IMAGE='$IMAGE' CONTAINER='$CONTAINER' TAR='$REMOTE_TAR' ENVFILE='$REMOTE_ENV' PORT='$HOST_PORT' bash -s" <<'EOF'
 set -euo pipefail
 echo "Stopping existing container (if any)..."
 docker rm -f "$CONTAINER" 2>/dev/null || true
@@ -152,7 +151,6 @@ if [ -n "$CLEAN_DB" ]; then
   docker run --rm -i --network host -e PGPASSWORD="$PTIN_DB_PASSWORD" -e PGOPTIONS='-c search_path=ptin' \
     -v "$SEED:/init-db.sql:ro" postgres:17-alpine \
     psql -v ON_ERROR_STOP=1 -h "${hostport%:*}" -p "${hostport#*:}" -U "$PTIN_DB_USERNAME" -d "$db" \
-    -v superadmin_password_hash="$SEED_SUPERADMIN_HASH" -v admin_password_hash="$SEED_ADMIN_HASH" \
     -f /init-db.sql -c "SELECT username, role, status FROM users WHERE username IS NOT NULL"
   rm -f "$SEED"
 fi

@@ -34,9 +34,9 @@ db/user/password all `ptin`).
 
 ### First-time DB setup
 
-Flyway creates the schema on first boot. Then seed the first superadmin/admin (BCrypt hash passed in; see
-`scripts/init-db.sql`): `psql ... -v superadmin_password_hash='<bcrypt>' -v admin_password_hash='<bcrypt>' -f scripts/init-db.sql`
-(same script for dev, UAT and prod; either variable may be omitted). Staff are seeded with usernames `superadmin` /
+Flyway creates the schema on first boot. Then seed the staff accounts: `psql ... -f scripts/init-db.sql`
+(same script for dev, UAT and prod; it embeds BCrypt hashes of the initial passwords, overridable with
+`-v superadmin_password_hash=... -v admin_password_hash=...`). Staff are seeded with usernames `superadmin` /
 `admin`, a BCrypt hash and no mobile number; they log in with `{username, password}`.
 
 ### Docker images
