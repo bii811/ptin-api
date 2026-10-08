@@ -34,8 +34,10 @@ db/user/password all `ptin`).
 
 ### First-time DB setup
 
-Flyway creates the schema on first boot. Then seed the first admin (no password; set it via
-forgot-password): `psql ... -v admin_mobile=20XXXXXXXX -f scripts/init-db.sql`.
+Flyway creates the schema on first boot. Then seed the first superadmin/admin (BCrypt hash passed in; see
+`scripts/init-db.sql`): `psql ... -v superadmin_password_hash='<bcrypt>' -v admin_password_hash='<bcrypt>' -f scripts/init-db.sql`
+(same script for dev, UAT and prod; either variable may be omitted). Staff are seeded with usernames `superadmin` /
+`admin`, a BCrypt hash and no mobile number; they log in with `{username, password}`.
 
 ### Docker images
 
@@ -148,8 +150,7 @@ rejects flow tokens and `parseFlowToken` rejects access tokens, so neither can s
   token) → `/forgot-password/reset` `{resetToken, newPassword}`; clears any lockout. A reset token is
   single-use: it is rejected if issued before the user's `passwordUpdatedAt`.
 - **Temporary password (support fallback)** — `POST /api/v1/admin/users/temporary-password`
-  `{mobileNumber}` (`@PreAuthorize("hasRole('ADMIN')")`; `ADMIN` is provisioned out-of-band like
-  `AUTHORIZER`, and cannot target other admins) generates a random 12-char password, stores its hash
+  `{mobileNumber}` (`@PreAuthorize("hasRole('ADMIN')")`; applicants only — staff have no mobile) generates a random 12-char password, stores its hash
   with `must_change_password = true`, and returns it once for the admin to relay. Logging in with it
   returns `passwordChangeRequired: true` plus a `resetToken` instead of a session; the user spends it on
   `/forgot-password/reset`, which clears the flag.
@@ -179,11 +180,15 @@ instead of losing updates.
 
 Security is stateless (`SessionCreationPolicy.STATELESS`, no CSRF): `JwtAuthenticationFilter` reads
 the `Authorization: Bearer` header, parses the JWT, and populates an `AuthenticatedPrincipal` with a
-single `ROLE_<UserRole>` authority (`APPLICANT` or `AUTHORIZER`). `SecurityConfig` only permits
+single `ROLE_<UserRole>` authority (`APPLICANT`, `ADMIN` or `SUPERADMIN`). `SecurityConfig` only permits
 `/api/v1/auth/register/**`, `/api/v1/auth/login/**`, `/api/v1/auth/forgot-password/**`, and
-`/actuator/health` without auth. **Role gating for authorizer-only actions
-(`approve`/`reject`/`retry`/list-pending) is enforced with `@PreAuthorize("hasRole('AUTHORIZER')")` on
+`/actuator/health` without auth. **Role gating for admin-only actions
+(`approve`/`reject`/`retry`/list/search, edit application, edit user profile) is enforced with `@PreAuthorize("hasRole('ADMIN')")` on
 the application-service methods, not in the controller** — `MethodSecurityConfig` enables this.
+`SUPERADMIN` inherits `ADMIN` via the `RoleHierarchy` bean in `SecurityConfig`, so `hasRole('ADMIN')` is enough for both.
+Admins edit an application's form with `PUT /ptin/applications/{id}` (only `PENDING_APPROVAL` / `ISSUANCE_FAILED`,
+enforced in `PtinApplication.edit`) and a user's profile with `PUT /profile/users/{userId}`. Migration V7 folds
+legacy `AUTHORIZER` rows into `ADMIN`.
 
 Tokens carry `jti`/`iss` and are validated against the configured `security.jwt.issuer`.
 `JwtTokenProvider.issueAccessToken` returns an `IssuedToken` so the advertised `expiresAt` cannot

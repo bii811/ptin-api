@@ -14,7 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 /**
- * Password login by mobile number, or by TIN once one has been issued to the account.
+ * Password login by mobile number, by TIN once one has been issued to the account, or by username (staff).
  *
  * <p>Not {@code @Transactional}: {@link UserCredentialTransactionalGateway} owns the write, and it
  * must commit the lockout bookkeeping independently of the error this method raises.
@@ -68,8 +68,12 @@ class LoginWithPasswordService implements LoginWithPasswordUseCase {
     private Optional<UserId> resolve(LoginWithPasswordCommand command) {
         boolean hasMobile = command.mobileNumber() != null && !command.mobileNumber().isBlank();
         boolean hasTin = command.tin() != null && !command.tin().isBlank();
-        if (hasMobile == hasTin) {
-            throw new IllegalArgumentException("Provide either mobileNumber or tin");
+        boolean hasUsername = command.username() != null && !command.username().isBlank();
+        if ((hasMobile ? 1 : 0) + (hasTin ? 1 : 0) + (hasUsername ? 1 : 0) != 1) {
+            throw new IllegalArgumentException("Provide exactly one of mobileNumber, tin or username");
+        }
+        if (hasUsername) {
+            return userRepository.findByUsername(command.username()).map(User::getId);
         }
         if (hasTin) {
             return taxpayerTinLookup.findUserIdByIssuedTin(command.tin());

@@ -45,9 +45,9 @@ class AssignTemporaryPasswordService implements AssignTemporaryPasswordUseCase {
         User user = userRepository.findByMobileNumber(mobileNumber)
                 .filter(User::isActive)
                 .orElseThrow(() -> new UserNotFoundException(mobileNumber.toString()));
-        // Admins can't take over other admins' accounts.
-        if (user.getRole() == UserRole.ADMIN) {
-            throw new AccessDeniedException("Cannot assign a temporary password to an admin account");
+        // Staff have no mobile (so they never match above); this guards any future overlap.
+        if (user.getRole() != UserRole.APPLICANT) {
+            throw new AccessDeniedException("Temporary passwords can only be assigned to applicants");
         }
 
         String temporaryPassword = generate();

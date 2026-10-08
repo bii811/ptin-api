@@ -24,6 +24,11 @@ class UserJpaRepositoryAdapter implements UserRepository {
     }
 
     @Override
+    public Optional<User> findByUsername(String username) {
+        return jpaRepository.findByUsername(username).map(mapper::toDomain);
+    }
+
+    @Override
     public Optional<User> findById(UserId id) {
         return jpaRepository.findById(id.value()).map(mapper::toDomain);
     }

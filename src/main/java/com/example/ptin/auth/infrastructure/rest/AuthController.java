@@ -111,7 +111,8 @@ public class AuthController {
     @PostMapping("/login/password")
     public ApiResponse<AuthTokenResponse> loginWithPassword(@Valid @RequestBody LoginWithPasswordRequest request) {
         return ApiResponse.success(AuthTokenResponse.from(loginWithPasswordUseCase.login(
-                new LoginWithPasswordCommand(request.mobileNumber(), request.tin(), request.password()))));
+                new LoginWithPasswordCommand(
+                        request.mobileNumber(), request.tin(), request.username(), request.password()))));
     }
 
     @PostMapping("/password")
@@ -144,7 +145,7 @@ public class AuthController {
     public ApiResponse<UserSummaryResponse> me(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
         CurrentUser user = getCurrentUserUseCase.get(principal.userId());
         return ApiResponse.success(new UserSummaryResponse(
-                user.mobileNumber(), user.role(), user.profileComplete(), user.tin(), user.passwordSet()));
+                user.mobileNumber(), user.username(), user.role(), user.profileComplete(), user.tin(), user.passwordSet()));
     }
 
     private ApiResponse<FlowTokenResponse> flowToken(FlowToken token) {

@@ -6,7 +6,11 @@ import java.time.Instant;
 public class User {
 
     private final UserId id;
+    /** Null for staff (ADMIN/SUPERADMIN), who sign in by username and have no phone for OTP. */
     private final MobileNumber mobileNumber;
+
+    /** Null for applicants. */
+    private final String username;
     private final UserRole role;
     private UserStatus status;
 
@@ -23,6 +27,7 @@ public class User {
     private User(
             UserId id,
             MobileNumber mobileNumber,
+            String username,
             UserRole role,
             UserStatus status,
             String passwordHash,
@@ -32,6 +37,7 @@ public class User {
             boolean mustChangePassword) {
         this.id = id;
         this.mobileNumber = mobileNumber;
+        this.username = username;
         this.role = role;
         this.status = status;
         this.passwordHash = passwordHash;
@@ -42,14 +48,15 @@ public class User {
     }
 
     public static User register(MobileNumber mobileNumber) {
-        // Public self-registration can only ever create an APPLICANT; AUTHORIZER accounts are provisioned out-of-band.
+        // Public self-registration can only ever create an APPLICANT; ADMIN/SUPERADMIN accounts are provisioned out-of-band.
         return new User(
-                UserId.generate(), mobileNumber, UserRole.APPLICANT, UserStatus.PENDING_VERIFICATION, null, null, 0, null, false);
+                UserId.generate(), mobileNumber, null, UserRole.APPLICANT, UserStatus.PENDING_VERIFICATION, null, null, 0, null, false);
     }
 
     public static User reconstitute(
             UserId id,
             MobileNumber mobileNumber,
+            String username,
             UserRole role,
             UserStatus status,
             String passwordHash,
@@ -60,6 +67,7 @@ public class User {
         return new User(
                 id,
                 mobileNumber,
+                username,
                 role,
                 status,
                 passwordHash,
@@ -155,6 +163,10 @@ public class User {
 
     public MobileNumber getMobileNumber() {
         return mobileNumber;
+    }
+
+    public String getUsername() {
+        return username;
     }
 
     public UserRole getRole() {

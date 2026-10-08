@@ -4,6 +4,7 @@ import com.example.ptin.profile.domain.exception.ProfileNotFoundException;
 import com.example.ptin.profile.domain.model.Profile;
 import com.example.ptin.profile.domain.port.in.UpdateProfileUseCase;
 import com.example.ptin.profile.domain.port.out.ProfileRepository;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,12 @@ class UpdateProfileService implements UpdateProfileUseCase {
 
     UpdateProfileService(ProfileRepository profileRepository) {
         this.profileRepository = profileRepository;
+    }
+
+    @Override
+    @PreAuthorize("hasRole('ADMIN')")
+    public Profile updateAsAdmin(UpdateProfileCommand command) {
+        return update(command);
     }
 
     @Override

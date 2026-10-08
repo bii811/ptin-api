@@ -31,7 +31,8 @@ class GetCurrentUserService implements GetCurrentUserUseCase {
     public CurrentUser get(UserId userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId.toString()));
         return new CurrentUser(
-                user.getMobileNumber().value(),
+                user.getMobileNumber() == null ? null : user.getMobileNumber().value(),
+                user.getUsername(),
                 user.getRole().name(),
                 profileCompletionLookup.isProfileComplete(userId),
                 taxpayerTinLookup.findIssuedTin(userId).orElse(null),

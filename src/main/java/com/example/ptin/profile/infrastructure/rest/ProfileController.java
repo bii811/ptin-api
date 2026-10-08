@@ -7,9 +7,12 @@ import com.example.ptin.profile.infrastructure.rest.request.UpdateProfileRequest
 import com.example.ptin.profile.infrastructure.rest.response.ProfileResponse;
 import com.example.ptin.shared.security.model.AuthenticatedPrincipal;
 import com.example.ptin.shared.web.ApiResponse;
+import com.example.ptin.shared.identity.UserId;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,6 +41,15 @@ public class ProfileController {
             @Valid @RequestBody UpdateProfileRequest request) {
         var updated = updateProfileUseCase.update(new UpdateProfileCommand(
                 principal.userId(), request.firstName(), request.lastName(), request.avatarUrl()));
+        return ApiResponse.success(ProfileResponse.from(updated));
+    }
+
+    /** Admin edit of another user's profile; role gating is on the use case. */
+    @PutMapping("/users/{userId}")
+    public ApiResponse<ProfileResponse> updateUserProfile(
+            @PathVariable UUID userId, @Valid @RequestBody UpdateProfileRequest request) {
+        var updated = updateProfileUseCase.updateAsAdmin(new UpdateProfileCommand(
+                new UserId(userId), request.firstName(), request.lastName(), request.avatarUrl()));
         return ApiResponse.success(ProfileResponse.from(updated));
     }
 }

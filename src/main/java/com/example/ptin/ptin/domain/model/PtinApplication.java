@@ -1,5 +1,6 @@
 package com.example.ptin.ptin.domain.model;
 
+import com.example.ptin.ptin.domain.exception.PtinApplicationNotEditableException;
 import com.example.ptin.ptin.domain.exception.PtinApplicationNotPendingException;
 import com.example.ptin.ptin.domain.exception.PtinApplicationNotRetryableException;
 import com.example.ptin.shared.identity.UserId;
@@ -10,14 +11,14 @@ public class PtinApplication {
     private final PtinApplicationId id;
     private final UserId userId;
     private PtinStatus status;
-    private final PtinType ptinType;
+    private PtinType ptinType;
 
     private PersonalInfo personalInfo;
-    private final ContactInfo contactInfo;
-    private final AddressInfo addressInfo;
-    private final EmploymentInfo employmentInfo;
-    private final IncomeInfo incomeInfo;
-    private final FinancialInfo financialInfo;
+    private ContactInfo contactInfo;
+    private AddressInfo addressInfo;
+    private EmploymentInfo employmentInfo;
+    private IncomeInfo incomeInfo;
+    private FinancialInfo financialInfo;
     private TaxpayerIdentificationNumber tin;
 
     private final Instant submittedAt;
@@ -85,12 +86,7 @@ public class PtinApplication {
             EmploymentInfo employmentInfo,
             IncomeInfo incomeInfo,
             FinancialInfo financialInfo) {
-        if (ptinType == null) {
-            throw new IllegalArgumentException("ptinType is required");
-        }
-        if (ptinType == PtinType.LABOR && (personalInfo.laboId() == null || personalInfo.laboId().isBlank())) {
-            throw new IllegalArgumentException("laboId is required for a LABOR PTIN");
-        }
+        validateType(ptinType, personalInfo);
         return new PtinApplication(
                 PtinApplicationId.generate(),
                 userId,
@@ -133,6 +129,37 @@ public class PtinApplication {
                 id, userId, status, ptinType, personalInfo, contactInfo, addressInfo, employmentInfo, incomeInfo,
                 financialInfo, tin, submittedAt, approvedBy, approvedAt, rejectedBy, rejectedAt, rejectionReason,
                 issuedAt, failureReason, failedAt, retryCount);
+    }
+
+    /** Admin correction of the form. Only before approval, or after a failed issuance (fix data, then retry). */
+    public void edit(
+            PtinType ptinType,
+            PersonalInfo personalInfo,
+            ContactInfo contactInfo,
+            AddressInfo addressInfo,
+            EmploymentInfo employmentInfo,
+            IncomeInfo incomeInfo,
+            FinancialInfo financialInfo) {
+        if (status != PtinStatus.PENDING_APPROVAL && status != PtinStatus.ISSUANCE_FAILED) {
+            throw new PtinApplicationNotEditableException(id);
+        }
+        validateType(ptinType, personalInfo);
+        this.ptinType = ptinType;
+        this.personalInfo = personalInfo;
+        this.contactInfo = contactInfo;
+        this.addressInfo = addressInfo;
+        this.employmentInfo = employmentInfo;
+        this.incomeInfo = incomeInfo;
+        this.financialInfo = financialInfo;
+    }
+
+    private static void validateType(PtinType ptinType, PersonalInfo personalInfo) {
+        if (ptinType == null) {
+            throw new IllegalArgumentException("ptinType is required");
+        }
+        if (ptinType == PtinType.LABOR && (personalInfo.laboId() == null || personalInfo.laboId().isBlank())) {
+            throw new IllegalArgumentException("laboId is required for a LABOR PTIN");
+        }
     }
 
     public void approve(UserId authorizerId) {

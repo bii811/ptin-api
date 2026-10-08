@@ -12,6 +12,7 @@ import com.example.ptin.ptin.domain.port.in.ListPtinApplicationsByStatusUseCase;
 import com.example.ptin.ptin.domain.port.in.RejectPtinApplicationUseCase;
 import com.example.ptin.ptin.domain.port.in.RejectPtinApplicationUseCase.RejectPtinApplicationCommand;
 import com.example.ptin.ptin.domain.port.in.RetryPtinIssuanceUseCase;
+import com.example.ptin.ptin.domain.port.in.UpdatePtinApplicationUseCase;
 import com.example.ptin.ptin.domain.port.in.RetryPtinIssuanceUseCase.RetryPtinIssuanceCommand;
 import com.example.ptin.ptin.domain.port.in.SearchPtinApplicationsUseCase;
 import com.example.ptin.ptin.domain.port.in.SubmitPtinApplicationUseCase;
@@ -34,6 +35,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -52,6 +54,7 @@ public class PtinController {
     private final ApprovePtinApplicationUseCase approvePtinApplicationUseCase;
     private final RejectPtinApplicationUseCase rejectPtinApplicationUseCase;
     private final RetryPtinIssuanceUseCase retryPtinIssuanceUseCase;
+    private final UpdatePtinApplicationUseCase updatePtinApplicationUseCase;
 
     public PtinController(
             SubmitPtinApplicationUseCase submitPtinApplicationUseCase,
@@ -61,7 +64,8 @@ public class PtinController {
             SearchPtinApplicationsUseCase searchPtinApplicationsUseCase,
             ApprovePtinApplicationUseCase approvePtinApplicationUseCase,
             RejectPtinApplicationUseCase rejectPtinApplicationUseCase,
-            RetryPtinIssuanceUseCase retryPtinIssuanceUseCase) {
+            RetryPtinIssuanceUseCase retryPtinIssuanceUseCase,
+            UpdatePtinApplicationUseCase updatePtinApplicationUseCase) {
         this.submitPtinApplicationUseCase = submitPtinApplicationUseCase;
         this.getPtinApplicationUseCase = getPtinApplicationUseCase;
         this.listMyPtinApplicationsUseCase = listMyPtinApplicationsUseCase;
@@ -70,6 +74,7 @@ public class PtinController {
         this.approvePtinApplicationUseCase = approvePtinApplicationUseCase;
         this.rejectPtinApplicationUseCase = rejectPtinApplicationUseCase;
         this.retryPtinIssuanceUseCase = retryPtinIssuanceUseCase;
+        this.updatePtinApplicationUseCase = updatePtinApplicationUseCase;
     }
 
     @PostMapping
@@ -133,6 +138,14 @@ public class PtinController {
         };
     }
 
+    /** Admin edit of the application form; same body as submit. */
+    @PutMapping("/{id}")
+    public ApiResponse<PtinApplicationResponse> update(
+            @PathVariable UUID id, @Valid @RequestBody SubmitPtinApplicationRequest request) {
+        var updated = updatePtinApplicationUseCase.update(request.toUpdateCommand(new PtinApplicationId(id)));
+        return ApiResponse.success(PtinApplicationResponse.from(updated));
+    }
+
     @PostMapping("/{id}/approve")
     public ApiResponse<PtinApplicationResponse> approve(
             @AuthenticationPrincipal AuthenticatedPrincipal principal, @PathVariable UUID id) {
@@ -164,6 +177,6 @@ public class PtinController {
     }
 
     private boolean isAuthorizer(AuthenticatedPrincipal principal) {
-        return "AUTHORIZER".equals(principal.role());
+        return "ADMIN".equals(principal.role()) || "SUPERADMIN".equals(principal.role());
     }
 }

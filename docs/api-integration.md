@@ -13,10 +13,10 @@ guide gives the whole-system picture and documents everything else.
 
 | Term | Meaning |
 |---|---|
-| **PTIN** | Personal Taxpayer Identification Number. Issued by TaxRIS (the tax authority system) after an authorizer approves an application. |
+| **PTIN** | Personal Taxpayer Identification Number. Issued by TaxRIS (the tax authority system) after an admin approves an application. |
 | **Applicant** | Role `APPLICANT`. Self-registers, completes a profile, submits PTIN applications, declares tax once a TIN is issued. |
-| **Authorizer** | Role `AUTHORIZER`. Reviews, approves, rejects and retries PTIN applications. Provisioned out-of-band. |
-| **Admin** | Role `ADMIN`. Can issue temporary passwords. Provisioned out-of-band. |
+| **Admin** | Role `ADMIN`. Reviews, approves, rejects, retries and edits PTIN applications; edits user profiles; issues temporary passwords. Provisioned out-of-band. |
+| **Superadmin** | Role `SUPERADMIN`. Everything an admin can do. Provisioned out-of-band. |
 | **PTIN type** | `INDIVIDUAL` (ordinary individual) or `LABOR` (worker coming from the LMIS labor system, requires `laboId`). Chooses which TaxRIS service issues the TIN. |
 | **TaxRIS** | External tax system. The API calls it server-side; clients never talk to it. |
 
@@ -27,9 +27,9 @@ guide gives the whole-system picture and documents everything else.
 2. Log in             POST /auth/login/password                      → accessToken
 3. Complete profile   PUT  /profile/me                (firstName, lastName required)
 4. Apply              POST /ptin/applications          → PENDING_APPROVAL
-5. Authorizer decides POST /ptin/applications/{id}/approve | /reject
+5. Admin decides POST /ptin/applications/{id}/approve | /reject
                          └ approve → API calls TaxRIS → ISSUED (TIN) or ISSUANCE_FAILED
-6. (if failed)        POST /ptin/applications/{id}/retry   (authorizer)
+6. (if failed)        POST /ptin/applications/{id}/retry   (admin)
 7. Declare tax        POST /tax-declarations           (requires an ISSUED PTIN)
 8. Log in by TIN      POST /auth/login/password {tin, password}  (works once ISSUED)
 ```
@@ -85,15 +85,18 @@ Only `GET /ptin/applications/search` is paged. Query params `page` (0-based), `s
 
 ### Roles and access
 
-| Endpoint group | APPLICANT | AUTHORIZER | ADMIN |
+| Endpoint group | APPLICANT | ADMIN | SUPERADMIN |
 |---|---|---|---|
 | `/auth/*` (public ones) | yes | yes | yes |
 | `/profile/me` | own | own | own |
 | Submit / list-mine PTIN | yes | yes | yes |
-| Get PTIN by id | own only | any | own only |
-| List / search / approve / reject / retry PTIN | no (403) | yes | no |
+| Get PTIN by id | own only | any | any |
+| List / search / approve / reject / retry / edit PTIN | no (403) | yes | yes |
+| `PUT /profile/users/{userId}` (edit a user's profile) | no | yes | yes |
 | `/tax-declarations/*` | own | own | own |
-| `/admin/users/temporary-password` | no | no | yes |
+| `/admin/users/temporary-password` | no | applicants only | applicants only |
+
+`SUPERADMIN` inherits `ADMIN` (role hierarchy), so it passes every admin check. Staff sign in with `{username, password}` (seeded usernames `superadmin` / `admin`, no mobile number, no OTP); temporary passwords apply to applicants only.
 
 ## 3. Authentication (summary)
 
@@ -144,10 +147,10 @@ Base: `/ptin/applications`
 ### 5.1 Status lifecycle
 
 ```
-                 approve (authorizer)                 TaxRIS success
+                 approve (admin)                 TaxRIS success
 PENDING_APPROVAL ───────────────────► APPROVED ──────────────────────► ISSUED  (TIN assigned)
       │                                  │
-      │ reject (authorizer)              │ TaxRIS failure
+      │ reject (admin)              │ TaxRIS failure
       ▼                                  ▼
    REJECTED                       ISSUANCE_FAILED ──retry──► (TaxRIS again) ► ISSUED | ISSUANCE_FAILED
 ```
@@ -268,16 +271,18 @@ failed attempts.
 | Method & path | Result |
 |---|---|
 | `GET /ptin/applications/me` | `data`: array of the caller's applications |
-| `GET /ptin/applications/{id}` | One application. **403** if it belongs to someone else (authorizers may read any). **404** if unknown. |
+| `GET /ptin/applications/{id}` | One application. **403** if it belongs to someone else (admins may read any). **404** if unknown. |
 
-### 5.5 Authorizer endpoints
+### 5.5 Admin endpoints
 
-All return **403** for non-authorizers.
+All return **403** for non-admins.
 
 | Method & path | Notes |
 |---|---|
 | `GET /ptin/applications?status=<filter>` | Array. `status`: `all` (default), `pending`, `approved`/`approve`, `rejected`/`reject`, `retry` (= `ISSUANCE_FAILED`). Anything else → 400. Issued applications are only reachable via `all`/`search`. |
 | `GET /ptin/applications/search` | Paged. Optional filters: `status` (`PENDING_APPROVAL`, `APPROVED`, `REJECTED`, `ISSUED`, `ISSUANCE_FAILED`), `tin`, `applicantName`, `submittedFrom`, `submittedTo` (ISO-8601 instants) plus `page`, `size`, `sort`. |
+| `PUT /ptin/applications/{id}` | Edit the application form. Same body as submit (`ptinType` included). Only while `PENDING_APPROVAL` or `ISSUANCE_FAILED` (fix data, then retry) — otherwise **409**. Returns the updated application. |
+| `PUT /profile/users/{userId}` | Edit a user's profile. Body `{ firstName, lastName, avatarUrl? }` (names required). Returns the profile. |
 | `POST /ptin/applications/{id}/approve` | No body. Approves, then **synchronously** calls TaxRIS. Returns the updated application. |
 | `POST /ptin/applications/{id}/reject` | Body `{ "reason": "..." }` (required, non-blank). Returns the updated application. |
 | `POST /ptin/applications/{id}/retry` | No body. Re-submits to TaxRIS for `APPROVED` / `ISSUANCE_FAILED`. Returns the updated application. |
@@ -425,7 +430,7 @@ response `Address` list carries `ADDR_LVL_TP` (Address Level), `ADDR_CD` (Addres
 (Address Name).
 
 TaxRIS documentation says TIN issuance is intended for after 6:00 PM. The API does **not** enforce a time
-window, so a daytime call may fail on the TaxRIS side; the authorizer can use `retry` later. Full TaxRIS
+window, so a daytime call may fail on the TaxRIS side; an admin can use `retry` later. Full TaxRIS
 field mapping and sample payloads: [taxris/taxris_guide.md](taxris/taxris_guide.md).
 
 ### Audit trail
@@ -484,11 +489,11 @@ APP=$(curl -s $BASE/ptin/applications -H "$H" -H "$A" -d '{
   "gender":"M","nationality":"LA","birthDay":"19900115","hpNo":"2055123456",
   "pubOffiYn":"N","indBusnOprYn":"N","pvtCoEmpYn":"Y","divdIncYn":"N","rentIncYn":"N"}' | jq -r .data.id)
 
-# 5. Authorizer approves (use an AUTHORIZER token) — blocks until TaxRIS answers
-curl -s -X POST $BASE/ptin/applications/$APP/approve -H "Authorization: Bearer $AUTHORIZER_TOKEN" | jq .data.status,.data.tin
+# 5. Admin approves (use an ADMIN token) — blocks until TaxRIS answers
+curl -s -X POST $BASE/ptin/applications/$APP/approve -H "Authorization: Bearer $ADMIN_TOKEN" | jq .data.status,.data.tin
 
 # 6. If ISSUANCE_FAILED, retry later
-curl -s -X POST $BASE/ptin/applications/$APP/retry -H "Authorization: Bearer $AUTHORIZER_TOKEN"
+curl -s -X POST $BASE/ptin/applications/$APP/retry -H "Authorization: Bearer $ADMIN_TOKEN"
 
 # 7. Declare tax (needs an ISSUED PTIN)
 curl -s $BASE/tax-declarations -H "$H" -H "$A" -d '{

@@ -114,7 +114,7 @@ Nothing durable is created until `register/complete`; a user who abandons mid-fl
 
 `POST /auth/login/password`
 
-Provide **exactly one** identifier: `mobileNumber` or `tin` (max 12 chars; works once a PTIN is `ISSUED`).
+Provide **exactly one** identifier: `mobileNumber`, `tin` (max 12 chars; works once a PTIN is `ISSUED`) or `username` (staff only: `admin` / `superadmin`, no OTP flow; they change their password via `POST /auth/password`).
 
 ```json
 { "mobileNumber": "2055123456", "password": "Secret123" }
@@ -145,7 +145,7 @@ Provide **exactly one** identifier: `mobileNumber` or `tin` (max 12 chars; works
 
 → Send the user to the new-password screen and submit `resetToken` to [Reset password](#7-reset-password). Always check `passwordChangeRequired` before reading `accessToken`.
 
-Roles: `APPLICANT`, `AUTHORIZER`, `ADMIN`.
+Roles: `APPLICANT`, `ADMIN`, `SUPERADMIN`.
 
 | Status | Meaning |
 |---|---|
@@ -209,6 +209,7 @@ Request/response identical to [step 2](#2-verify-registration-otp); the returned
 {
   "data": {
     "mobileNumber": "2055123456",
+    "username": null,
     "role": "APPLICANT",
     "profileComplete": false,
     "tin": null,
@@ -217,17 +218,17 @@ Request/response identical to [step 2](#2-verify-registration-otp); the returned
 }
 ```
 
-`tin` is `null` until a PTIN is issued. `401` when the token is missing/expired.
+`tin` is `null` until a PTIN is issued. `mobileNumber` is `null` for staff; `username` is `null` for applicants. `401` when the token is missing/expired.
 
 ### 10. Assign temporary password (admin / support)
 
-`POST /admin/users/temporary-password` — requires Bearer token with role `ADMIN`.
+`POST /admin/users/temporary-password` — requires Bearer token with role `ADMIN` or `SUPERADMIN`. Applicants only (staff have no mobile number and are rejected).
 
 ```json
 { "mobileNumber": "2055123456" }
 ```
 
-`200`: `{ "data": { "temporaryPassword": "aB3...12chars" } }` — shown **once**; the admin relays it to the user. Cannot target other admins. The user's next login returns `passwordChangeRequired: true` (see [Login](#4-login)).
+`200`: `{ "data": { "temporaryPassword": "aB3...12chars" } }` — shown **once**; the admin relays it to the user. The user's next login returns `passwordChangeRequired: true` (see [Login](#4-login)).
 
 `403` if caller is not `ADMIN`.
 

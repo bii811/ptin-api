@@ -20,7 +20,7 @@ class ListPtinApplicationsByStatusService implements ListPtinApplicationsByStatu
     }
 
     @Override
-    @PreAuthorize("hasRole('AUTHORIZER')")
+    @PreAuthorize("hasRole('ADMIN')")
     public List<PtinApplication> list(PtinStatus status) {
         return status == null
                 ? ptinApplicationRepository.findAll()

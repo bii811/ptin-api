@@ -19,7 +19,7 @@ class RetryPtinIssuanceService implements RetryPtinIssuanceUseCase {
     }
 
     @Override
-    @PreAuthorize("hasRole('AUTHORIZER')")
+    @PreAuthorize("hasRole('ADMIN')")
     public void retry(RetryPtinIssuanceCommand command) {
         ptinMediationCoordinator.submitAndRecordOutcome(
                 command.applicationId(), PtinMediationCoordinator.FUNCTION_RETRY, command.authorizerId());

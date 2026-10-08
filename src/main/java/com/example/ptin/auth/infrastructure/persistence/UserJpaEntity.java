@@ -19,8 +19,11 @@ import org.hibernate.annotations.SQLRestriction;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserJpaEntity extends AuditableJpaEntity {
 
-    @Column(name = "mobile_number", nullable = false, unique = true, length = 20)
+    @Column(name = "mobile_number", unique = true, length = 20)
     private String mobileNumber;
+
+    @Column(name = "username", unique = true, length = 50)
+    private String username;
 
     @Column(name = "role", nullable = false, length = 20)
     private String role;
@@ -52,6 +55,7 @@ public class UserJpaEntity extends AuditableJpaEntity {
     public UserJpaEntity(
             UUID id,
             String mobileNumber,
+            String username,
             String role,
             String status,
             String passwordHash,
@@ -61,6 +65,7 @@ public class UserJpaEntity extends AuditableJpaEntity {
             boolean mustChangePassword) {
         assignId(id);
         this.mobileNumber = mobileNumber;
+        this.username = username;
         this.role = role;
         this.status = status;
         this.passwordHash = passwordHash;

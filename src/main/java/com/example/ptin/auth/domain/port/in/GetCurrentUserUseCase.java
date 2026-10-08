@@ -10,6 +10,6 @@ public interface GetCurrentUserUseCase {
      * {@code tin} is null until one is issued; together with {@code passwordSet} it tells the client
      * which login options this account currently has.
      */
-    record CurrentUser(String mobileNumber, String role, boolean profileComplete, String tin, boolean passwordSet) {
+    record CurrentUser(String mobileNumber, String username, String role, boolean profileComplete, String tin, boolean passwordSet) {
     }
 }

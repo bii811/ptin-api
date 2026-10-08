@@ -13,7 +13,8 @@ class UserPersistenceMapper {
     UserJpaEntity toEntity(User user) {
         return new UserJpaEntity(
                 user.getId().value(),
-                user.getMobileNumber().value(),
+                user.getMobileNumber() == null ? null : user.getMobileNumber().value(),
+                user.getUsername(),
                 user.getRole().name(),
                 user.getStatus().name(),
                 user.getPasswordHash(),
@@ -35,7 +36,8 @@ class UserPersistenceMapper {
     User toDomain(UserJpaEntity entity) {
         return User.reconstitute(
                 new UserId(entity.getId()),
-                new MobileNumber(entity.getMobileNumber()),
+                entity.getMobileNumber() == null ? null : new MobileNumber(entity.getMobileNumber()),
+                entity.getUsername(),
                 UserRole.valueOf(entity.getRole()),
                 UserStatus.valueOf(entity.getStatus()),
                 entity.getPasswordHash(),

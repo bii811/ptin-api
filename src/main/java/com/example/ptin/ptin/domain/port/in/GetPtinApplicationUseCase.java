@@ -7,7 +7,7 @@ import com.example.ptin.shared.identity.UserId;
 public interface GetPtinApplicationUseCase {
 
     /**
-     * @param requesterIsAuthorizer whether the caller holds the AUTHORIZER role; authorizers may view
+     * @param requesterIsAuthorizer whether the caller is staff (ADMIN/SUPERADMIN); staff may view
      *                              any application, applicants may only view their own.
      */
     PtinApplication getById(PtinApplicationId id, UserId requestingUserId, boolean requesterIsAuthorizer);

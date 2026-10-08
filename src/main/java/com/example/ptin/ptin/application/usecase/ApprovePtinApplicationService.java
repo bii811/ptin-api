@@ -24,7 +24,7 @@ class ApprovePtinApplicationService implements ApprovePtinApplicationUseCase {
     }
 
     @Override
-    @PreAuthorize("hasRole('AUTHORIZER')")
+    @PreAuthorize("hasRole('ADMIN')")
     public void approve(ApprovePtinApplicationCommand command) {
         PtinApplication application = ptinApplicationRepository.findById(command.applicationId())
                 .orElseThrow(() -> new PtinApplicationNotFoundException(command.applicationId()));

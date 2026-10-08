@@ -9,6 +9,8 @@ public interface UserRepository {
 
     Optional<User> findByMobileNumber(MobileNumber mobileNumber);
 
+    Optional<User> findByUsername(String username);
+
     Optional<User> findById(UserId id);
 
     /**

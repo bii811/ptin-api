@@ -21,7 +21,7 @@ class SearchPtinApplicationsService implements SearchPtinApplicationsUseCase {
     }
 
     @Override
-    @PreAuthorize("hasRole('AUTHORIZER')")
+    @PreAuthorize("hasRole('ADMIN')")
     public Page<PtinApplication> search(PtinApplicationSearchCriteria criteria, Pageable pageable) {
         return ptinApplicationRepository.search(criteria, pageable);
     }

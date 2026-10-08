@@ -10,6 +10,8 @@ interface UserJpaRepository extends JpaRepository<UserJpaEntity, UUID> {
 
     Optional<UserJpaEntity> findByMobileNumber(String mobileNumber);
 
+    Optional<UserJpaEntity> findByUsername(String username);
+
     /** SELECT ... FOR UPDATE, so concurrent password attempts serialise on the lockout counters. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<UserJpaEntity> findWithLockById(UUID id);
