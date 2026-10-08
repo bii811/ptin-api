@@ -29,6 +29,9 @@ public class PtinApplicationJpaEntity extends AuditableJpaEntity {
     @Column(name = "status", nullable = false, length = 30)
     private String status;
 
+    @Column(name = "ptin_type", nullable = false, length = 20)
+    private String ptinType;
+
     @Setter(AccessLevel.NONE)
     @Column(name = "submitted_at", nullable = false)
     private Instant submittedAt;

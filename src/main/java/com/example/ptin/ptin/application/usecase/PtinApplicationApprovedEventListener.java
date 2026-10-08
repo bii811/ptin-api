@@ -16,6 +16,7 @@ class PtinApplicationApprovedEventListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onApproved(PtinApplicationApprovedEvent event) {
-        ptinMediationCoordinator.submitAndRecordOutcome(event.applicationId());
+        ptinMediationCoordinator.submitAndRecordOutcome(
+                event.applicationId(), PtinMediationCoordinator.FUNCTION_APPROVE, event.approvedBy());;
     }
 }

@@ -355,3 +355,11 @@ separate "Return codes and messages" document — obtain that from TaxRIS team.
 - The `PBOX_NO`, `FAX_NO`, and address sequence fields (`ADDR_SEQNO`, `UNIT_NO`) appear to be
   optional in practice (all have multiplicity `1` but may accept empty strings — confirm with TaxRIS
   team).
+
+---
+
+## How this API uses it
+
+- `PtinType.INDIVIDUAL` → `issueIndividualTin`; `PtinType.LABOR` → `managePTinInformation` (`SYS`=`LMIS` from `PTIN_MEDIATION_SYS`, `LABO_ID` from the application).
+- `SRL_AMT` is stored on the application but not sent (not in either spec).
+- All calls go through `shared.mediation.TaxRisClient` and are logged to `taxris_api_call_logs`.

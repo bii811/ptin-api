@@ -9,6 +9,7 @@ import com.example.ptin.ptin.domain.model.PersonalInfo;
 import com.example.ptin.ptin.domain.model.PtinApplication;
 import com.example.ptin.ptin.domain.model.PtinApplicationId;
 import com.example.ptin.ptin.domain.model.PtinStatus;
+import com.example.ptin.ptin.domain.model.PtinType;
 import com.example.ptin.ptin.domain.model.TaxpayerIdentificationNumber;
 import com.example.ptin.shared.identity.UserId;
 import org.springframework.stereotype.Component;
@@ -41,6 +42,7 @@ class PtinApplicationPersistenceMapper {
         entity.setFailureReason(application.getFailureReason());
         entity.setFailedAt(application.getFailedAt());
         entity.setRetryCount(application.getRetryCount());
+        entity.setPtinType(application.getPtinType().name());
         entity.setTin(application.getTin() == null ? null : application.getTin().value());
 
         PersonalInfo personalInfo = application.getPersonalInfo();
@@ -124,6 +126,7 @@ class PtinApplicationPersistenceMapper {
                 new PtinApplicationId(entity.getId()),
                 new UserId(entity.getUserId()),
                 PtinStatus.valueOf(entity.getStatus()),
+                PtinType.valueOf(entity.getPtinType()),
                 personalInfo,
                 contactInfo,
                 addressInfo,

@@ -5,6 +5,7 @@ import com.example.ptin.ptin.domain.model.PtinApplicationId;
 import com.example.ptin.ptin.domain.model.TaxpayerIdentificationNumber;
 import com.example.ptin.ptin.domain.port.out.TinMediationClient;
 import com.example.ptin.ptin.domain.port.out.TinMediationClient.MediationResult;
+import com.example.ptin.shared.identity.UserId;
 import org.springframework.stereotype.Component;
 
 /**
@@ -18,6 +19,9 @@ import org.springframework.stereotype.Component;
 @Component
 class PtinMediationCoordinator {
 
+    static final String FUNCTION_APPROVE = "PTIN_APPROVE";
+    static final String FUNCTION_RETRY = "PTIN_RETRY";
+
     private final PtinApplicationTransactionalGateway transactionalGateway;
     private final TinMediationClient tinMediationClient;
 
@@ -26,10 +30,10 @@ class PtinMediationCoordinator {
         this.tinMediationClient = tinMediationClient;
     }
 
-    void submitAndRecordOutcome(PtinApplicationId id) {
+    void submitAndRecordOutcome(PtinApplicationId id, String functionSource, UserId triggeredBy) {
         PtinApplication application = transactionalGateway.loadOrThrow(id);
 
-        MediationResult result = tinMediationClient.submit(application);
+        MediationResult result = tinMediationClient.submit(application, functionSource, triggeredBy);
 
         if (result.success()) {
             application.markIssued(

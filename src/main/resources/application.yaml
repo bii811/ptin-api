@@ -40,6 +40,6 @@ ptin:
   mediation:
     base-url: ${PTIN_MEDIATION_BASE_URL:http://localhost:8081}
     hash-key: ${PTIN_MEDIATION_HASH_KEY:}
-    sys: ${PTIN_MEDIATION_SYS:}
+    sys: ${PTIN_MEDIATION_SYS:LMIS}
     connect-timeout-ms: 5000
     read-timeout-ms: 10000

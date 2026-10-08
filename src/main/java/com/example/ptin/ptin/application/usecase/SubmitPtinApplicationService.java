@@ -29,6 +29,7 @@ class SubmitPtinApplicationService implements SubmitPtinApplicationUseCase {
         }
         PtinApplication application = PtinApplication.submit(
                 command.userId(),
+                command.ptinType(),
                 command.personalInfo(),
                 command.contactInfo(),
                 command.addressInfo(),

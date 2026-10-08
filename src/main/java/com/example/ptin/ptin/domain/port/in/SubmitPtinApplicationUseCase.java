@@ -7,6 +7,7 @@ import com.example.ptin.ptin.domain.model.FinancialInfo;
 import com.example.ptin.ptin.domain.model.IncomeInfo;
 import com.example.ptin.ptin.domain.model.PersonalInfo;
 import com.example.ptin.ptin.domain.model.PtinApplicationId;
+import com.example.ptin.ptin.domain.model.PtinType;
 import com.example.ptin.shared.identity.UserId;
 
 public interface SubmitPtinApplicationUseCase {
@@ -15,6 +16,7 @@ public interface SubmitPtinApplicationUseCase {
 
     record SubmitPtinApplicationCommand(
             UserId userId,
+            PtinType ptinType,
             PersonalInfo personalInfo,
             ContactInfo contactInfo,
             AddressInfo addressInfo,

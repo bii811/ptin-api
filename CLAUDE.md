@@ -83,8 +83,12 @@ live under `com.example.ptin.<module>`: `auth`, `profile`, `ptin` (PTIN applicat
     otp/, acl/, mediation/, event/, config/, client/   other adapter kinds as needed
 ```
 
-`shared` holds cross-cutting infra with its own mini-hexagon where warranted (e.g.
-`shared/integration` for outbound API call logging). Also: `shared/exception` (DomainException,
+`shared` holds cross-cutting infra. `shared/mediation` is the single `TaxRisClient` for every TaxRIS
+endpoint (`issueIndividualTin`, `managePTinInformation`, `callAddress`, plus a raw `post` used by the
+tax-declaration adapter); each call is audited in `taxris_api_call_logs` (function source, reference id,
+triggered by, URL, headers, body with `HASH_KEY` redacted, response, result code/message, attempt no).
+A PTIN application has a `PtinType`: `INDIVIDUAL` → `issueIndividualTin`, `LABOR` (requires `laboId`) →
+`managePTinInformation`. Also: `shared/exception` (DomainException,
 GlobalExceptionHandler), `shared/web` (`ApiResponse<T>` envelope, CORS), `shared/identity` (`UserId`),
 `shared/security` (JWT filter/provider/config), `shared/persistence` (`AuditableJpaEntity`, JPA
 auditing config).

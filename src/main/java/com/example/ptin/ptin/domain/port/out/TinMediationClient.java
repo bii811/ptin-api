@@ -1,10 +1,12 @@
 package com.example.ptin.ptin.domain.port.out;
 
 import com.example.ptin.ptin.domain.model.PtinApplication;
+import com.example.ptin.shared.identity.UserId;
 
 public interface TinMediationClient {
 
-    MediationResult submit(PtinApplication application);
+    /** {@code functionSource}/{@code triggeredBy} identify the caller in the external-call audit log. */
+    MediationResult submit(PtinApplication application, String functionSource, UserId triggeredBy);
 
     record MediationResult(
             boolean success, String tin, String confirmedGivenName, String confirmedFamilyName, String errorMessage) {

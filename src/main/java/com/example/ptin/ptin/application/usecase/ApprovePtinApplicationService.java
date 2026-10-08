@@ -33,6 +33,6 @@ class ApprovePtinApplicationService implements ApprovePtinApplicationUseCase {
 
         // Published for AFTER_COMMIT delivery (see PtinApplicationApprovedEventListener) so the
         // external mediation HTTP call never happens while this transaction still holds a DB connection.
-        eventPublisher.publishEvent(new PtinApplicationApprovedEvent(application.getId()));
+        eventPublisher.publishEvent(new PtinApplicationApprovedEvent(application.getId(), command.authorizerId()));
     }
 }

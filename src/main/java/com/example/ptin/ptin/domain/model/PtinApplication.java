@@ -10,6 +10,7 @@ public class PtinApplication {
     private final PtinApplicationId id;
     private final UserId userId;
     private PtinStatus status;
+    private final PtinType ptinType;
 
     private PersonalInfo personalInfo;
     private final ContactInfo contactInfo;
@@ -34,6 +35,7 @@ public class PtinApplication {
             PtinApplicationId id,
             UserId userId,
             PtinStatus status,
+            PtinType ptinType,
             PersonalInfo personalInfo,
             ContactInfo contactInfo,
             AddressInfo addressInfo,
@@ -54,6 +56,7 @@ public class PtinApplication {
         this.id = id;
         this.userId = userId;
         this.status = status;
+        this.ptinType = ptinType;
         this.personalInfo = personalInfo;
         this.contactInfo = contactInfo;
         this.addressInfo = addressInfo;
@@ -75,16 +78,24 @@ public class PtinApplication {
 
     public static PtinApplication submit(
             UserId userId,
+            PtinType ptinType,
             PersonalInfo personalInfo,
             ContactInfo contactInfo,
             AddressInfo addressInfo,
             EmploymentInfo employmentInfo,
             IncomeInfo incomeInfo,
             FinancialInfo financialInfo) {
+        if (ptinType == null) {
+            throw new IllegalArgumentException("ptinType is required");
+        }
+        if (ptinType == PtinType.LABOR && (personalInfo.laboId() == null || personalInfo.laboId().isBlank())) {
+            throw new IllegalArgumentException("laboId is required for a LABOR PTIN");
+        }
         return new PtinApplication(
                 PtinApplicationId.generate(),
                 userId,
                 PtinStatus.PENDING_APPROVAL,
+                ptinType,
                 personalInfo,
                 contactInfo,
                 addressInfo,
@@ -100,6 +111,7 @@ public class PtinApplication {
             PtinApplicationId id,
             UserId userId,
             PtinStatus status,
+            PtinType ptinType,
             PersonalInfo personalInfo,
             ContactInfo contactInfo,
             AddressInfo addressInfo,
@@ -118,7 +130,7 @@ public class PtinApplication {
             Instant failedAt,
             int retryCount) {
         return new PtinApplication(
-                id, userId, status, personalInfo, contactInfo, addressInfo, employmentInfo, incomeInfo,
+                id, userId, status, ptinType, personalInfo, contactInfo, addressInfo, employmentInfo, incomeInfo,
                 financialInfo, tin, submittedAt, approvedBy, approvedAt, rejectedBy, rejectedAt, rejectionReason,
                 issuedAt, failureReason, failedAt, retryCount);
     }
@@ -181,6 +193,10 @@ public class PtinApplication {
 
     public UserId getUserId() {
         return userId;
+    }
+
+    public PtinType getPtinType() {
+        return ptinType;
     }
 
     public PtinStatus getStatus() {

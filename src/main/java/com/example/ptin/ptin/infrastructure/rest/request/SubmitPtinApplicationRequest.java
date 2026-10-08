@@ -6,11 +6,14 @@ import com.example.ptin.ptin.domain.model.EmploymentInfo;
 import com.example.ptin.ptin.domain.model.FinancialInfo;
 import com.example.ptin.ptin.domain.model.IncomeInfo;
 import com.example.ptin.ptin.domain.model.PersonalInfo;
+import com.example.ptin.ptin.domain.model.PtinType;
 import com.example.ptin.ptin.domain.port.in.SubmitPtinApplicationUseCase.SubmitPtinApplicationCommand;
 import com.example.ptin.shared.identity.UserId;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public record SubmitPtinApplicationRequest(
+        @NotNull PtinType ptinType,
         String laboId,
         @NotBlank String givenName,
         @NotBlank String familyName,
@@ -48,6 +51,7 @@ public record SubmitPtinApplicationRequest(
     public SubmitPtinApplicationCommand toCommand(UserId userId) {
         return new SubmitPtinApplicationCommand(
                 userId,
+                ptinType,
                 new PersonalInfo(
                         laboId,
                         givenName,
