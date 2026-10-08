@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Keep docs in sync
+
+Whenever a change affects behavior, endpoints, request/response fields, config, DB schema or architecture,
+update **this file** and **`docs/api-integration.md`** in the same change (and `docs/taxris/taxris_guide.md`
+if TaxRIS integration changed). Don't leave them for later.
+
 ## Stack
 
 - Java 21 (via Gradle toolchain), Gradle Kotlin DSL (`build.gradle.kts`), wrapper-only (no local Gradle install required)
