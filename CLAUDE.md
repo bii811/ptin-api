@@ -142,8 +142,8 @@ rejects flow tokens and `parseFlowToken` rejects access tokens, so neither can s
   `/register/otp/verify` (returns registration token) → `/register/complete` `{registrationToken,
   password}` creates the ACTIVE `APPLICANT` and publishes `UserRegisteredEvent`. Nothing durable exists
   until `complete`, so a user who abandons after verify simply requests a fresh OTP and starts over.
-- **Login** — `/login/password` takes `{mobileNumber | tin, password}` (exactly one identifier; TIN
-  works once a PTIN is `ISSUED`). Unknown accounts burn a decoy BCrypt check and get the same 401 as a
+- **Login** — `/login/password` takes `{mobileNumber | tin | username, password}` (exactly one identifier; TIN
+  works once a PTIN is `ISSUED`; `username` is staff-only). Unknown accounts burn a decoy BCrypt check and get the same 401 as a
   wrong password. Lockout after `auth.password.max-failed-attempts` (423).
 - **Forgot password** — `/forgot-password/otp/request` always returns the generic success message
   (unknown numbers and throttled requests are swallowed) → `/forgot-password/otp/verify` (returns reset

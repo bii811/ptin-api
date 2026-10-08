@@ -38,3 +38,4 @@ out/
 
 ### Secrets ###
 .uat.env
+.uat-seed-credentials

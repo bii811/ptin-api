@@ -7,6 +7,9 @@
 # Set CLEAN_DB=1 to also drop+recreate the ptin schema before starting the new
 # container (Flyway rebuilds it on boot) — see scripts/reset-deploy-uat.sh.
 #
+# With CLEAN_DB=1 it then seeds the staff accounts (scripts/init-db.sql) once the app is healthy; the
+# BCrypt hashes come from SEED_SUPERADMIN_HASH / SEED_ADMIN_HASH (scripts/reset-deploy-uat.sh sets them).
+#
 # Usage: ./scripts/deploy-uat.sh [--yes]
 set -euo pipefail
 
@@ -21,7 +24,8 @@ VPN_PID_FILE="/tmp/vpn.pid"
 
 # --- UAT deploy target + app env vars (.uat.env, untracked/never committed) ---
 set -a
-source "${REPO_ROOT}/.uat.env"
+# tr: tolerate CRLF line endings (file edited on Windows)
+source <(tr -d '\r' < "${REPO_ROOT}/.uat.env")
 set +a
 # Provides: SERVER_HOST, SERVER_USER, SERVER_PASSWORD, PTIN_DB_URL,
 # PTIN_DB_USERNAME, PTIN_DB_PASSWORD
@@ -35,6 +39,7 @@ HOST_PORT=8087
 LOCAL_TAR="/tmp/ptin-${TAG}.tar"
 REMOTE_TAR="/tmp/ptin-${TAG}.tar"
 REMOTE_ENV="/tmp/ptin-api.env"
+REMOTE_SEED="/tmp/ptin-init-db.sql"
 # App-only env for the running container — drop the SERVER_* deploy
 # credentials from .uat.env, they're for reaching the box, not for the app.
 LOCAL_ENV="/tmp/ptin-api.env"
@@ -88,7 +93,7 @@ else
 fi
 
 # 3. Package image + runtime env, copy to server.
-grep -v '^SERVER_' "${REPO_ROOT}/.uat.env" > "$LOCAL_ENV"
+tr -d '\r' < "${REPO_ROOT}/.uat.env" | grep -v '^SERVER_' > "$LOCAL_ENV"
 
 echo "Saving image to ${LOCAL_TAR}..."
 docker save -o "$LOCAL_TAR" "$IMAGE"
@@ -98,12 +103,16 @@ sshpass -p "$SERVER_PASSWORD" scp -o StrictHostKeyChecking=accept-new \
   "$LOCAL_TAR" "${SERVER_USER}@${SERVER_HOST}:${REMOTE_TAR}"
 sshpass -p "$SERVER_PASSWORD" scp -o StrictHostKeyChecking=accept-new \
   "$LOCAL_ENV" "${SERVER_USER}@${SERVER_HOST}:${REMOTE_ENV}"
+if [ -n "${CLEAN_DB:-}" ]; then
+  sshpass -p "$SERVER_PASSWORD" scp -o StrictHostKeyChecking=accept-new \
+    "${SCRIPT_DIR}/init-db.sql" "${SERVER_USER}@${SERVER_HOST}:${REMOTE_SEED}"
+fi
 rm -f "$LOCAL_TAR" "$LOCAL_ENV"
 
 # 4-7. Stop old container, drop old image tag, load new image, run it.
 echo "Deploying on ${SERVER_HOST}..."
 sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=accept-new "${SERVER_USER}@${SERVER_HOST}" \
-  "CLEAN_DB='${CLEAN_DB:-}' IMAGE='$IMAGE' CONTAINER='$CONTAINER' TAR='$REMOTE_TAR' ENVFILE='$REMOTE_ENV' PORT='$HOST_PORT' bash -s" <<'EOF'
+  "CLEAN_DB='${CLEAN_DB:-}' SEED_SUPERADMIN_HASH='${SEED_SUPERADMIN_HASH:-}' SEED_ADMIN_HASH='${SEED_ADMIN_HASH:-}' SEED='$REMOTE_SEED' IMAGE='$IMAGE' CONTAINER='$CONTAINER' TAR='$REMOTE_TAR' ENVFILE='$REMOTE_ENV' PORT='$HOST_PORT' bash -s" <<'EOF'
 set -euo pipefail
 echo "Stopping existing container (if any)..."
 docker rm -f "$CONTAINER" 2>/dev/null || true
@@ -128,6 +137,25 @@ rm -f "$TAR"
 
 echo "Starting container..."
 docker run -d -p "${PORT}:8080" --name "$CONTAINER" --restart=always --env-file "$ENVFILE" "$IMAGE"
+
+if [ -n "$CLEAN_DB" ]; then
+  # Flyway has recreated the schema once the app reports healthy; only then can the seed insert.
+  echo "Waiting for the app to finish migrating..."
+  for _ in $(seq 1 60); do
+    curl -sf "http://localhost:${PORT}/actuator/health" >/dev/null && break
+    sleep 3
+  done
+  curl -sf "http://localhost:${PORT}/actuator/health" >/dev/null || { echo "App did not become healthy; not seeding."; exit 1; }
+  echo "Seeding staff accounts..."
+  hostport="${PTIN_DB_URL#jdbc:postgresql://}"; hostport="${hostport%%/*}"
+  db="${PTIN_DB_URL#jdbc:postgresql://*/}"; db="${db%%\?*}"
+  docker run --rm -i --network host -e PGPASSWORD="$PTIN_DB_PASSWORD" -e PGOPTIONS='-c search_path=ptin' \
+    -v "$SEED:/init-db.sql:ro" postgres:17-alpine \
+    psql -v ON_ERROR_STOP=1 -h "${hostport%:*}" -p "${hostport#*:}" -U "$PTIN_DB_USERNAME" -d "$db" \
+    -v superadmin_password_hash="$SEED_SUPERADMIN_HASH" -v admin_password_hash="$SEED_ADMIN_HASH" \
+    -f /init-db.sql -c "SELECT username, role, status FROM users WHERE username IS NOT NULL"
+  rm -f "$SEED"
+fi
 EOF
 
 # 8. Tail logs until Ctrl+C (then cleanup() disconnects the VPN, step 9).
