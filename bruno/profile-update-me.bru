@@ -1,0 +1,27 @@
+meta {
+  name: profile-update-me
+  type: http
+  seq: 15
+}
+
+put {
+  url: {{baseUrl}}/api/v1/profile/me
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "firstName": "Somsy",
+    "lastName": "Vongphachan",
+    "avatarUrl": "https://example.com/avatar.png"
+  }
+}
+
+assert {
+  res.status: eq 200
+}

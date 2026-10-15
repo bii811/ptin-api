@@ -1,0 +1,29 @@
+meta {
+  name: ptin-search
+  type: http
+  seq: 21
+}
+
+get {
+  url: {{baseUrl}}/api/v1/ptin/applications/search?page=0&size=20
+  body: none
+  auth: none
+}
+
+params:query {
+  page: 0
+  size: 20
+  ~status: 
+  ~tin: 
+  ~applicantName: 
+  ~submittedFrom: 
+  ~submittedTo: 
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+assert {
+  res.status: eq 200
+}

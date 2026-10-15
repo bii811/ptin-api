@@ -1,0 +1,26 @@
+meta {
+  name: login-mobile
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/login/password
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "mobileNumber": "{{mobileNumber}}",
+    "password": "{{password}}"
+  }
+}
+
+script:post-response {
+  bru.setVar("token", res.body.data.accessToken);
+}
+
+assert {
+  res.status: eq 200
+}

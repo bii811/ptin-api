@@ -1,0 +1,62 @@
+meta {
+  name: ptin-submit
+  type: http
+  seq: 17
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ptin/applications
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "ptinType": "INDIVIDUAL",
+    "laboId": "",
+    "givenName": "Somsy",
+    "familyName": "Vongphachan",
+    "gender": "M",
+    "nationality": "LA",
+    "birthDay": "19900101",
+    "individualId": "",
+    "individualIdType": "",
+    "familyBookIssuancePlace": "",
+    "telNo": "",
+    "hpNo": "02012345678",
+    "faxNo": "",
+    "email": "somsy@example.com",
+    "addrSeqNo": "",
+    "unitNo": "",
+    "roadNm": "",
+    "houNo": "",
+    "pboxNo": "",
+    "pubOffiYn": "N",
+    "indBusnOprYn": "N",
+    "pvtCoEmpYn": "N",
+    "etcJobCont": "",
+    "workTin": "",
+    "workAddrSeqNo": "",
+    "workUnitNo": "",
+    "workRoadNm": "",
+    "workHouNo": "",
+    "srlAmt": "",
+    "divdIncYn": "N",
+    "rentIncYn": "N",
+    "etcIncCont": "",
+    "bankAccNo": "",
+    "soSeNo": ""
+  }
+}
+
+script:post-response {
+  bru.setVar("applicationId", res.body.data.id);
+}
+
+assert {
+  res.status: eq 201
+}

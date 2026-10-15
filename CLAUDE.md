@@ -57,7 +57,7 @@ layered-jar extraction so code-only changes only rebuild the last image layer, a
 
 ### Bruno CLI
 
-`bruno/` is a Bruno (`.bru`) collection: `cd bruno && bru run --env uat --env-var password=<admin pw>` logs in as staff and lists TaxRIS call logs. Envs: `uat` (202.123.177.30:8087), `local`.
+`bruno/` is a Bruno (`.bru`) collection: `cd bruno && bru run --env uat --env-var password=<admin pw>` logs in as staff and lists TaxRIS call logs. Envs: `uat` (202.123.177.30:8087), `local`. The collection has one request per endpoint (auth, profile, ptin, tax-declarations, admin), ordered by `seq`; chained vars: `token`, `otpCode`, `registrationToken`, `resetToken`, `applicationId`, `taxDeclarationId`. `userId` (for `profile-update-user`) must be set manually.
 
 ## Configuration
 

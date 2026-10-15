@@ -1,0 +1,25 @@
+meta {
+  name: register-otp-request
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/register/otp/request
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "mobileNumber": "{{mobileNumber}}"
+  }
+}
+
+script:post-response {
+  const m = res.body.message || ""; const x = m.match(/OTP: (\d+)/); if (x) bru.setVar("otpCode", x[1]);
+}
+
+assert {
+  res.status: eq 200
+}

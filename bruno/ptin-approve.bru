@@ -1,0 +1,19 @@
+meta {
+  name: ptin-approve
+  type: http
+  seq: 23
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ptin/applications/{{applicationId}}/approve
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+assert {
+  res.status: eq 200
+}

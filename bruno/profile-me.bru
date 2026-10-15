@@ -1,0 +1,19 @@
+meta {
+  name: profile-me
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{baseUrl}}/api/v1/profile/me
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+assert {
+  res.status: eq 200
+}

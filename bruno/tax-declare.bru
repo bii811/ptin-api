@@ -1,0 +1,54 @@
+meta {
+  name: tax-declare
+  type: http
+  seq: 26
+}
+
+post {
+  url: {{baseUrl}}/api/v1/tax-declarations
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "invoiceNumber": "INV-0001",
+    "invoiceDate": "20260101",
+    "buyerTin": "",
+    "buyerFullName": "",
+    "saleCount": "1",
+    "supplyAmount": "100000",
+    "serviceFee": "0",
+    "exciseAmount": "0",
+    "vatAmount": "10000",
+    "saleAmount": "110000",
+    "discountAmount": "0",
+    "saleCancelCount": "0",
+    "saleCancelAmount": "0",
+    "items": [
+      {
+        "hsCode": "8517",
+        "hsName": "Telephone sets",
+        "saleCount": "1",
+        "unitSale": "EA",
+        "unitSaleAmount": "100000",
+        "supplyAmount": "100000",
+        "exciseAmount": "0",
+        "vatAmount": "10000",
+        "saleAmount": "110000"
+      }
+    ]
+  }
+}
+
+script:post-response {
+  bru.setVar("taxDeclarationId", res.body.data.id);
+}
+
+assert {
+  res.status: eq 201
+}

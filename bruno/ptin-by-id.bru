@@ -1,0 +1,19 @@
+meta {
+  name: ptin-by-id
+  type: http
+  seq: 19
+}
+
+get {
+  url: {{baseUrl}}/api/v1/ptin/applications/{{applicationId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+assert {
+  res.status: eq 200
+}
