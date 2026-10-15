@@ -114,6 +114,7 @@ Full details, error tables and cURL/TypeScript samples: [auth-api-integration.md
 | `POST /auth/password` | Bearer | change password |
 | `GET /auth/me` | Bearer | `{mobileNumber, role, profileComplete, tin, passwordSet}` |
 | `POST /admin/users/temporary-password` | Bearer (ADMIN) | `{mobileNumber}` → `{temporaryPassword}` (shown once) |
+| `GET /admin/taxris-logs?referenceId&page&size` | Bearer (ADMIN) | paged `taxris_api_call_logs` rows, newest first |
 
 Notes: access tokens last 24 h and are **not** revoked on password change. Lockout after 5 failed logins
 (423). Password: min 8 chars, max 72 bytes; weak mixes are accepted but flagged `passwordStrength: "WEAK"`.

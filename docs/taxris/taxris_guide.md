@@ -362,4 +362,4 @@ separate "Return codes and messages" document — obtain that from TaxRIS team.
 
 - `PtinType.INDIVIDUAL` → `issueIndividualTin`; `PtinType.LABOR` → `managePTinInformation` (`SYS`=`LMIS` from `PTIN_MEDIATION_SYS`, `LABO_ID` from the application).
 - `SRL_AMT` is stored on the application but not sent (not in either spec).
-- All calls go through `shared.mediation.TaxRisClient` and are logged to `taxris_api_call_logs`.
+- All calls go through `shared.mediation.TaxRisClient` and are logged to `taxris_api_call_logs`. Staff read them via `GET /api/v1/admin/taxris-logs` (Bruno: `bruno/`, `cd bruno && bru run --env uat --env-var password=...`).

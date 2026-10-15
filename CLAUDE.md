@@ -51,6 +51,14 @@ rather than invoking `docker build` directly:
 ./scripts/docker-build-prod.sh    # ptin:prod  — PROFILE=prod
 ```
 
+The Dockerfile uses a BuildKit cache mount for `~/.gradle` (needs BuildKit, the default on current Docker), a
+layered-jar extraction so code-only changes only rebuild the last image layer, and runs as non-root `app` with
+`-XX:MaxRAMPercentage=75`.
+
+### Bruno CLI
+
+`bruno/` is a Bruno (`.bru`) collection: `cd bruno && bru run --env uat --env-var password=<admin pw>` logs in as staff and lists TaxRIS call logs. Envs: `uat` (202.123.177.30:8087), `local`.
+
 ## Configuration
 
 `application.yaml` is the base config (env-var placeholders with dev-friendly defaults, e.g.
@@ -93,7 +101,7 @@ live under `com.example.ptin.<module>`: `auth`, `profile`, `ptin` (PTIN applicat
 
 `shared` holds cross-cutting infra. `shared/mediation` is the single `TaxRisClient` for every TaxRIS
 endpoint (`issueIndividualTin`, `managePTinInformation`, `callAddress`, plus a raw `post` used by the
-tax-declaration adapter); each call is audited in `taxris_api_call_logs` (function source, reference id,
+tax-declaration adapter); each call is audited in `taxris_api_call_logs` (readable by admins at `GET /api/v1/admin/taxris-logs`) (function source, reference id,
 triggered by, URL, headers, body with `HASH_KEY` redacted, response, result code/message, attempt no).
 A PTIN application has a `PtinType`: `INDIVIDUAL` → `issueIndividualTin`, `LABOR` (requires `laboId`) →
 `managePTinInformation`. Also: `shared/exception` (DomainException,

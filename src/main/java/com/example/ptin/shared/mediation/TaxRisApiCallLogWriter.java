@@ -1,13 +1,18 @@
 package com.example.ptin.shared.mediation;
 
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-interface TaxRisApiCallLogJpaRepository extends JpaRepository<TaxRisApiCallLog, java.util.UUID> {
+interface TaxRisApiCallLogJpaRepository extends JpaRepository<TaxRisApiCallLog, UUID> {
+
+    Page<TaxRisApiCallLog> findByReferenceId(String referenceId, Pageable pageable);
 }
 
 /**
