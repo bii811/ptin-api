@@ -20,6 +20,10 @@ headers {
   Authorization: Bearer {{token}}
 }
 
+vars:pre-request {
+  token: eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJmNzA4ZGU0My03ZmNkLTRjNzctOTNhMC04MWYyYzkwMDY4OTAiLCJpc3MiOiJwdGluLWFwaSIsInN1YiI6IjZiOGExNTIwLThhMTUtNGNhMC1hYzljLTk4OGZmODZkOGRlMSIsInJvbGUiOiJTVVBFUkFETUlOIiwiaWF0IjoxNzkyMDQzMDM3LCJleHAiOjE3OTIxMjk0Mzd9.jdotfvq89Vej3kaZ_R3TpcrrAYOwYiCFCXYBjjstJkg
+}
+
 assert {
   res.status: eq 200
 }

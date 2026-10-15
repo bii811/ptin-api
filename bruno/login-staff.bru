@@ -17,6 +17,11 @@ body:json {
   }
 }
 
+vars:pre-request {
+  username: superadmin
+  password: amrRClA0iIohEcJN
+}
+
 script:post-response {
   bru.setVar("token", res.body.data.accessToken);
 }
