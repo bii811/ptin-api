@@ -239,6 +239,7 @@ optional.
 |---|---|
 | 400 | Validation failure (see rules above) |
 | 422 | Profile incomplete — call `PUT /profile/me` first |
+| 409 | Caller already has a PTIN application (any status, including `REJECTED`) — max one per user |
 
 ### 5.3 Application object
 

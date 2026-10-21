@@ -204,6 +204,7 @@ the application-service methods, not in the controller** — `MethodSecurityConf
 Admins edit an application's form with `PUT /ptin/applications/{id}` (only `PENDING_APPROVAL` / `ISSUANCE_FAILED`,
 enforced in `PtinApplication.edit`) and a user's profile with `PUT /profile/users/{userId}`. Migration V7 folds
 legacy `AUTHORIZER` rows into `ADMIN`.
+A user may hold at most one PTIN application (any status, rejected included): `SubmitPtinApplicationService` returns 409 if one already exists.
 
 Tokens carry `jti`/`iss` and are validated against the configured `security.jwt.issuer`.
 `JwtTokenProvider.issueAccessToken` returns an `IssuedToken` so the advertised `expiresAt` cannot
