@@ -1,6 +1,7 @@
 package com.example.ptin.ptin.application.usecase;
 
 import com.example.ptin.ptin.domain.exception.ProfileIncompleteException;
+import com.example.ptin.ptin.domain.exception.PtinApplicationAlreadyExistsException;
 import com.example.ptin.ptin.domain.model.PtinApplication;
 import com.example.ptin.ptin.domain.model.PtinApplicationId;
 import com.example.ptin.ptin.domain.port.in.SubmitPtinApplicationUseCase;
@@ -26,6 +27,10 @@ class SubmitPtinApplicationService implements SubmitPtinApplicationUseCase {
     public PtinApplicationId submit(SubmitPtinApplicationCommand command) {
         if (!profileCompletionPort.isProfileComplete(command.userId())) {
             throw new ProfileIncompleteException();
+        }
+        // one application per user, whatever its status (pending, rejected, failed and issued all block a new one)
+        if (!ptinApplicationRepository.findByUserId(command.userId()).isEmpty()) {
+            throw new PtinApplicationAlreadyExistsException();
         }
         PtinApplication application = PtinApplication.submit(
                 command.userId(),
