@@ -551,3 +551,10 @@ async function approve(id: string, token: string) {
 - [ ] Don't rely on a revoked token after password change — tokens live until `expiresAt`.
 - [ ] Show `passwordStrength: "WEAK"` as a warning, not an error.
 - [ ] After a PTIN reaches `ISSUED`, refresh `GET /auth/me`: `tin` is set and TIN login becomes available.
+
+## E2E smoke test (Bruno)
+
+`bruno-e2e/new-user-flow` walks register → login → profile → submit PTIN → admin approve → TaxRIS issuance →
+user reads TIN (also checks the `taxris-logs` audit row and TIN login). Run:
+`cd bruno-e2e && bru run new-user-flow --env uat --env-var adminPassword=<admin pw>`. Requires an environment
+that echoes the OTP (`otp.expose-in-response=true`, i.e. not prod) and a reachable TaxRIS.

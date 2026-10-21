@@ -1,0 +1,45 @@
+meta {
+  name: ptin-submit
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ptin/applications
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{userToken}}
+}
+
+body:json {
+  {
+    "ptinType": "INDIVIDUAL",
+    "givenName": "E2e",
+    "familyName": "Tester",
+    "gender": "M",
+    "nationality": "LA",
+    "birthDay": "19900101",
+    "hpNo": "0{{mobileNumber}}",
+    "email": "e2e@example.com",
+    "pubOffiYn": "N",
+    "indBusnOprYn": "N",
+    "pvtCoEmpYn": "N",
+    "divdIncYn": "N",
+    "rentIncYn": "N"
+  }
+}
+
+script:post-response {
+  if (res.status === 201) bru.setVar("applicationId", res.body.data.id);
+}
+
+tests {
+  test("application pending approval", function () {
+    expect(res.status).to.equal(201);
+    expect(res.body.data.status).to.equal("PENDING_APPROVAL");
+    expect(res.body.data.tin).to.equal(null);
+  });
+}

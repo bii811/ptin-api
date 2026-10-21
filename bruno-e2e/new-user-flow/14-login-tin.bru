@@ -1,0 +1,22 @@
+meta {
+  name: login-tin
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/login/password
+  body: json
+  auth: none
+}
+
+body:json {
+  { "tin": "{{tin}}", "password": "{{userPassword}}" }
+}
+
+tests {
+  test("can log in with the issued TIN", function () {
+    expect(res.status).to.equal(200);
+    expect(res.body.data.accessToken).to.be.a("string");
+  });
+}

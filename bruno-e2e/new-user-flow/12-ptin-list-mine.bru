@@ -1,0 +1,24 @@
+meta {
+  name: ptin-list-mine
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{baseUrl}}/api/v1/ptin/applications/me
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{userToken}}
+}
+
+tests {
+  test("user sees the issued application with the same TIN", function () {
+    expect(res.status).to.equal(200);
+    const app = res.body.data.find(a => a.id === bru.getVar("applicationId"));
+    expect(app.status).to.equal("ISSUED");
+    expect(app.tin).to.equal(bru.getVar("tin"));
+  });
+}

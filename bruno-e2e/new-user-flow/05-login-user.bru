@@ -1,0 +1,26 @@
+meta {
+  name: login-user
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/login/password
+  body: json
+  auth: none
+}
+
+body:json {
+  { "mobileNumber": "{{mobileNumber}}", "password": "{{userPassword}}" }
+}
+
+script:post-response {
+  if (res.status === 200) bru.setVar("userToken", res.body.data.accessToken);
+}
+
+tests {
+  test("logged in as applicant", function () {
+    expect(res.status).to.equal(200);
+    expect(bru.getVar("userToken")).to.be.a("string");
+  });
+}

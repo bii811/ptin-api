@@ -1,0 +1,27 @@
+meta {
+  name: me-before-ptin
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/v1/auth/me
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{userToken}}
+}
+
+script:post-response {
+  bru.setVar("profileComplete", res.body.data.profileComplete);
+}
+
+tests {
+  test("applicant without a TIN yet", function () {
+    expect(res.status).to.equal(200);
+    expect(res.body.data.role).to.equal("APPLICANT");
+    expect(res.body.data.tin).to.equal(null);
+  });
+}

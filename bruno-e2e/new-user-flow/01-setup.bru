@@ -1,0 +1,25 @@
+meta {
+  name: setup
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/actuator/health
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  // fresh identity per run: the register flow 409s on an already-active number
+  const digits = () => String(Math.floor(Math.random() * 1e8)).padStart(8, "0");
+  bru.setVar("mobileNumber", "20" + digits());
+  bru.setVar("userPassword", "E2e" + digits() + "a");
+}
+
+tests {
+  test("api is up", function () {
+    expect(res.status).to.equal(200);
+    expect(res.body.status).to.equal("UP");
+  });
+}

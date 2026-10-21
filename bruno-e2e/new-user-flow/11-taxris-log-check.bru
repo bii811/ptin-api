@@ -1,0 +1,26 @@
+meta {
+  name: taxris-log-check
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/api/v1/admin/taxris-logs?referenceId={{applicationId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{adminToken}}
+}
+
+tests {
+  test("issuance call to TaxRIS was audited", function () {
+    expect(res.status).to.equal(200);
+    const rows = res.body.data.content;
+    expect(rows.length).to.be.greaterThan(0);
+    expect(rows[0].functionSource).to.equal("PTIN_APPROVE");
+    expect(rows[0].endpointUrl).to.contain("issueIndividualTin");
+    expect(rows[0].responseBody).to.be.a("string").and.not.empty;
+  });
+}

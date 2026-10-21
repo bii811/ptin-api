@@ -59,6 +59,13 @@ layered-jar extraction so code-only changes only rebuild the last image layer, a
 
 `bruno/` is a Bruno (`.bru`) collection: `cd bruno && bru run --env uat --env-var password=<admin pw>` logs in as staff and lists TaxRIS call logs. Envs: `uat` (202.123.177.30:8087), `local`. The collection has one request per endpoint (auth, profile, ptin, tax-declarations, admin), ordered by `seq`; chained vars: `token`, `otpCode`, `registrationToken`, `resetToken`, `applicationId`, `taxDeclarationId`. `userId` (for `profile-update-user`) must be set manually.
 
+`bruno-e2e/` is a separate Bruno collection holding the end-to-end test of the new-user flow (register → login →
+profile if incomplete → submit PTIN → admin approve → TaxRIS issuance → user reads TIN):
+`cd bruno-e2e && bru run new-user-flow --env uat --env-var adminPassword=<admin pw>` (env `local` also exists).
+Each run registers a fresh random mobile number (no delete endpoint, so test users accumulate) and reads the OTP
+from the response message, so it needs `otp.expose-in-response=true` — **never run it against prod**. Approve calls
+the real TaxRIS, so the run fails at `10-ptin-approve` if issuance fails (the test asserts `status == ISSUED`).
+
 ## Configuration
 
 `application.yaml` is the base config (env-var placeholders with dev-friendly defaults, e.g.

@@ -1,0 +1,26 @@
+meta {
+  name: register-otp-verify
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/register/otp/verify
+  body: json
+  auth: none
+}
+
+body:json {
+  { "mobileNumber": "{{mobileNumber}}", "otpCode": "{{otpCode}}" }
+}
+
+script:post-response {
+  if (res.status === 200) bru.setVar("registrationToken", res.body.data.token);
+}
+
+tests {
+  test("registration token returned", function () {
+    expect(res.status).to.equal(200);
+    expect(bru.getVar("registrationToken")).to.be.a("string");
+  });
+}
