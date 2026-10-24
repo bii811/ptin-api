@@ -92,7 +92,7 @@ PTIN application states: `PENDING_APPROVAL → APPROVED → ISSUED | ISSUANCE_FA
 | `tax-declarations` | `POST`, `GET`, `GET {id}` (own) |
 | `admin` | `POST users/temporary-password`; `GET taxris-logs` |
 
-Full request/response reference: [docs/api-integration.md](docs/api-integration.md) and
+PTIN issuance lifecycle: [docs/ptin-issuance-lifecycle.md](docs/ptin-issuance-lifecycle.md). Full request/response reference: [docs/api-integration.md](docs/api-integration.md) and
 [docs/auth-api-integration.md](docs/auth-api-integration.md). TaxRIS contract: [docs/taxris/taxris_guide.md](docs/taxris/taxris_guide.md).
 
 ## System design
