@@ -2,7 +2,12 @@ package com.example.ptin.auth.domain.model;
 
 import com.example.ptin.shared.identity.UserId;
 import java.time.Instant;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
+@Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class User {
 
     private final UserId id;
@@ -23,29 +28,6 @@ public class User {
 
     /** True while the password is a support-assigned temporary one that must be replaced before login. */
     private boolean mustChangePassword;
-
-    private User(
-            UserId id,
-            MobileNumber mobileNumber,
-            String username,
-            UserRole role,
-            UserStatus status,
-            String passwordHash,
-            Instant passwordUpdatedAt,
-            int failedLoginAttempts,
-            Instant lockedUntil,
-            boolean mustChangePassword) {
-        this.id = id;
-        this.mobileNumber = mobileNumber;
-        this.username = username;
-        this.role = role;
-        this.status = status;
-        this.passwordHash = passwordHash;
-        this.passwordUpdatedAt = passwordUpdatedAt;
-        this.failedLoginAttempts = failedLoginAttempts;
-        this.lockedUntil = lockedUntil;
-        this.mustChangePassword = mustChangePassword;
-    }
 
     public static User register(MobileNumber mobileNumber) {
         // Public self-registration can only ever create an APPLICANT; ADMIN/SUPERADMIN accounts are provisioned out-of-band.
@@ -155,46 +137,6 @@ public class User {
     private void clearLockout() {
         this.failedLoginAttempts = 0;
         this.lockedUntil = null;
-    }
-
-    public UserId getId() {
-        return id;
-    }
-
-    public MobileNumber getMobileNumber() {
-        return mobileNumber;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public UserRole getRole() {
-        return role;
-    }
-
-    public UserStatus getStatus() {
-        return status;
-    }
-
-    public String getPasswordHash() {
-        return passwordHash;
-    }
-
-    public Instant getPasswordUpdatedAt() {
-        return passwordUpdatedAt;
-    }
-
-    public int getFailedLoginAttempts() {
-        return failedLoginAttempts;
-    }
-
-    public Instant getLockedUntil() {
-        return lockedUntil;
-    }
-
-    public boolean isMustChangePassword() {
-        return mustChangePassword;
     }
 
     public boolean hasPassword() {

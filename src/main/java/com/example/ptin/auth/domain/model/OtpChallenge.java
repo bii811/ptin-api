@@ -1,7 +1,12 @@
 package com.example.ptin.auth.domain.model;
 
 import java.time.Instant;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
+@Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class OtpChallenge {
 
     private final OtpChallengeId id;
@@ -12,25 +17,6 @@ public class OtpChallenge {
     private final int maxAttempts;
     private int attemptCount;
     private Instant consumedAt;
-
-    private OtpChallenge(
-            OtpChallengeId id,
-            MobileNumber mobileNumber,
-            OtpPurpose purpose,
-            String hashedCode,
-            Instant expiresAt,
-            int maxAttempts,
-            int attemptCount,
-            Instant consumedAt) {
-        this.id = id;
-        this.mobileNumber = mobileNumber;
-        this.purpose = purpose;
-        this.hashedCode = hashedCode;
-        this.expiresAt = expiresAt;
-        this.maxAttempts = maxAttempts;
-        this.attemptCount = attemptCount;
-        this.consumedAt = consumedAt;
-    }
 
     public static OtpChallenge issue(
             MobileNumber mobileNumber, OtpPurpose purpose, String hashedCode, Instant expiresAt, int maxAttempts) {
@@ -84,38 +70,6 @@ public class OtpChallenge {
         if (consumedAt == null) {
             consumedAt = now;
         }
-    }
-
-    public OtpChallengeId getId() {
-        return id;
-    }
-
-    public MobileNumber getMobileNumber() {
-        return mobileNumber;
-    }
-
-    public OtpPurpose getPurpose() {
-        return purpose;
-    }
-
-    public String getHashedCode() {
-        return hashedCode;
-    }
-
-    public Instant getExpiresAt() {
-        return expiresAt;
-    }
-
-    public int getMaxAttempts() {
-        return maxAttempts;
-    }
-
-    public int getAttemptCount() {
-        return attemptCount;
-    }
-
-    public Instant getConsumedAt() {
-        return consumedAt;
     }
 
     public boolean isConsumed() {

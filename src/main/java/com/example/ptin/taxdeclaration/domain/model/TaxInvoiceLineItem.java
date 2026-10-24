@@ -1,5 +1,7 @@
 package com.example.ptin.taxdeclaration.domain.model;
 
+import com.example.ptin.shared.validation.FieldValidation;
+
 public record TaxInvoiceLineItem(
         String hsCode,
         String hsName,

@@ -5,7 +5,12 @@ import com.example.ptin.ptin.domain.exception.PtinApplicationNotPendingException
 import com.example.ptin.ptin.domain.exception.PtinApplicationNotRetryableException;
 import com.example.ptin.shared.identity.UserId;
 import java.time.Instant;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
+@Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class PtinApplication {
 
     private final PtinApplicationId id;
@@ -31,51 +36,6 @@ public class PtinApplication {
     private String failureReason;
     private Instant failedAt;
     private int retryCount;
-
-    private PtinApplication(
-            PtinApplicationId id,
-            UserId userId,
-            PtinStatus status,
-            PtinType ptinType,
-            PersonalInfo personalInfo,
-            ContactInfo contactInfo,
-            AddressInfo addressInfo,
-            EmploymentInfo employmentInfo,
-            IncomeInfo incomeInfo,
-            FinancialInfo financialInfo,
-            TaxpayerIdentificationNumber tin,
-            Instant submittedAt,
-            UserId approvedBy,
-            Instant approvedAt,
-            UserId rejectedBy,
-            Instant rejectedAt,
-            String rejectionReason,
-            Instant issuedAt,
-            String failureReason,
-            Instant failedAt,
-            int retryCount) {
-        this.id = id;
-        this.userId = userId;
-        this.status = status;
-        this.ptinType = ptinType;
-        this.personalInfo = personalInfo;
-        this.contactInfo = contactInfo;
-        this.addressInfo = addressInfo;
-        this.employmentInfo = employmentInfo;
-        this.incomeInfo = incomeInfo;
-        this.financialInfo = financialInfo;
-        this.tin = tin;
-        this.submittedAt = submittedAt;
-        this.approvedBy = approvedBy;
-        this.approvedAt = approvedAt;
-        this.rejectedBy = rejectedBy;
-        this.rejectedAt = rejectedAt;
-        this.rejectionReason = rejectionReason;
-        this.issuedAt = issuedAt;
-        this.failureReason = failureReason;
-        this.failedAt = failedAt;
-        this.retryCount = retryCount;
-    }
 
     public static PtinApplication submit(
             UserId userId,
@@ -212,89 +172,5 @@ public class PtinApplication {
         if (status != PtinStatus.APPROVED && status != PtinStatus.ISSUANCE_FAILED) {
             throw new PtinApplicationNotRetryableException(id);
         }
-    }
-
-    public PtinApplicationId getId() {
-        return id;
-    }
-
-    public UserId getUserId() {
-        return userId;
-    }
-
-    public PtinType getPtinType() {
-        return ptinType;
-    }
-
-    public PtinStatus getStatus() {
-        return status;
-    }
-
-    public PersonalInfo getPersonalInfo() {
-        return personalInfo;
-    }
-
-    public ContactInfo getContactInfo() {
-        return contactInfo;
-    }
-
-    public AddressInfo getAddressInfo() {
-        return addressInfo;
-    }
-
-    public EmploymentInfo getEmploymentInfo() {
-        return employmentInfo;
-    }
-
-    public IncomeInfo getIncomeInfo() {
-        return incomeInfo;
-    }
-
-    public FinancialInfo getFinancialInfo() {
-        return financialInfo;
-    }
-
-    public TaxpayerIdentificationNumber getTin() {
-        return tin;
-    }
-
-    public Instant getSubmittedAt() {
-        return submittedAt;
-    }
-
-    public UserId getApprovedBy() {
-        return approvedBy;
-    }
-
-    public Instant getApprovedAt() {
-        return approvedAt;
-    }
-
-    public UserId getRejectedBy() {
-        return rejectedBy;
-    }
-
-    public Instant getRejectedAt() {
-        return rejectedAt;
-    }
-
-    public String getRejectionReason() {
-        return rejectionReason;
-    }
-
-    public Instant getIssuedAt() {
-        return issuedAt;
-    }
-
-    public String getFailureReason() {
-        return failureReason;
-    }
-
-    public Instant getFailedAt() {
-        return failedAt;
-    }
-
-    public int getRetryCount() {
-        return retryCount;
     }
 }

@@ -1,5 +1,7 @@
 package com.example.ptin.ptin.domain.model;
 
+import com.example.ptin.shared.validation.FieldValidation;
+
 public record AddressInfo(String addrSeqNo, String unitNo, String roadNm, String houNo, String pboxNo) {
 
     public AddressInfo {

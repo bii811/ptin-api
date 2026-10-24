@@ -1,9 +1,12 @@
 package com.example.ptin.taxdeclaration.domain.model;
 
+import com.example.ptin.shared.validation.FieldValidation;
 import com.example.ptin.shared.identity.UserId;
 import java.time.Instant;
 import java.util.List;
+import lombok.Getter;
 
+@Getter
 public class TaxDeclaration {
 
     private final TaxDeclarationId id;
@@ -186,89 +189,5 @@ public class TaxDeclaration {
         if (status != TaxDeclarationStatus.PENDING) {
             throw new IllegalStateException("Tax declaration " + id + " has already been recorded as " + status);
         }
-    }
-
-    public TaxDeclarationId getId() {
-        return id;
-    }
-
-    public UserId getUserId() {
-        return userId;
-    }
-
-    public TaxDeclarationStatus getStatus() {
-        return status;
-    }
-
-    public String getTin() {
-        return tin;
-    }
-
-    public String getInvoiceNumber() {
-        return invoiceNumber;
-    }
-
-    public String getInvoiceDate() {
-        return invoiceDate;
-    }
-
-    public String getBuyerTin() {
-        return buyerTin;
-    }
-
-    public String getBuyerFullName() {
-        return buyerFullName;
-    }
-
-    public String getSaleCount() {
-        return saleCount;
-    }
-
-    public String getSupplyAmount() {
-        return supplyAmount;
-    }
-
-    public String getServiceFee() {
-        return serviceFee;
-    }
-
-    public String getExciseAmount() {
-        return exciseAmount;
-    }
-
-    public String getVatAmount() {
-        return vatAmount;
-    }
-
-    public String getSaleAmount() {
-        return saleAmount;
-    }
-
-    public String getDiscountAmount() {
-        return discountAmount;
-    }
-
-    public String getSaleCancelCount() {
-        return saleCancelCount;
-    }
-
-    public String getSaleCancelAmount() {
-        return saleCancelAmount;
-    }
-
-    public List<TaxInvoiceLineItem> getItems() {
-        return items;
-    }
-
-    public Instant getSubmittedAt() {
-        return submittedAt;
-    }
-
-    public String getResultCode() {
-        return resultCode;
-    }
-
-    public String getResultMessage() {
-        return resultMessage;
     }
 }

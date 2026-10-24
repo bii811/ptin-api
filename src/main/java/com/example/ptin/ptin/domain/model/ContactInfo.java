@@ -1,5 +1,7 @@
 package com.example.ptin.ptin.domain.model;
 
+import com.example.ptin.shared.validation.FieldValidation;
+
 public record ContactInfo(String telNo, String hpNo, String faxNo, String email) {
 
     public ContactInfo {
