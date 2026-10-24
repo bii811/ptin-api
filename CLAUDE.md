@@ -89,6 +89,9 @@ overlay only non-secret, environment-specific behavior (logging levels, `otp.exp
 **Convention: real secrets/environment endpoints go through env-var placeholders in the base file
 (injected by the deployment platform at runtime); profile YAML files are for behavioral differences
 only, never for secrets.**
+The TaxRIS settings (`ptin.mediation.*`) live only in `application.yaml`; `application-uat.yaml` must not redefine them
+(it once did, with an empty `sys` and a different `hash-key`, which made UAT calls fail with TaxRIS code 904). Per-environment
+values come from `PTIN_MEDIATION_*` env vars (see `.uat.env.example`).
 
 One auth toggle differs per environment:
 
