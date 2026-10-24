@@ -199,6 +199,8 @@ Multi-stage image (Gradle build → `eclipse-temurin:21-jre`), layered jar, non-
 
 ## Known limitations
 
+- UAT cannot issue TINs yet: TaxRIS answers 904 to the current `HASH_KEY`; waiting on a new key (see
+  [docs/ptin-issuance-lifecycle.md](docs/ptin-issuance-lifecycle.md#todo-uat-taxris-authorisation-code-904)).
 - OTP delivery is a logging placeholder; no real SMS gateway yet.
 - Access tokens are not revocable before expiry.
 - One PTIN application per user is enforced in code only (no DB unique constraint); many-per-user is planned, see [docs/ptin-issuance-lifecycle.md](docs/ptin-issuance-lifecycle.md#6-remarks--todo).

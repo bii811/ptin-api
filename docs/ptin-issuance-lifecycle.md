@@ -136,3 +136,13 @@ in the future. Until then:
       it declares under (and check the TIN belongs to them).
 - [ ] `GET /auth/me` exposes a single `tin`; becomes a list or a primary TIN.
 - [ ] Update `CLAUDE.md` and `docs/api-integration.md`, which both state the one-per-user rule.
+
+### TODO: UAT TaxRIS authorisation (code 904)
+
+- [ ] **Waiting on a new `HASH_KEY` from TaxRIS** (checked 2026-10-24). On UAT every issuance call, both
+      `issueIndividualTin` and `managePTinInformation` (now sent with `SYS=LMIS`), returns
+      `CD=904 "You do not have authentication to join the service."`, so approve always ends in `ISSUANCE_FAILED`.
+      The request is well-formed; TaxRIS rejects the key (the one in use is the guide's *backup* key).
+- [ ] When the key arrives: set `PTIN_MEDIATION_HASH_KEY=<key>` in `.uat.env`, redeploy
+      (`./scripts/deploy-uat.sh`), then run `cd bruno-e2e && bru run new-user-flow --env uat --env-var adminPassword=<pw>`.
+      It currently fails at `10-ptin-approve` (and `12`, `13`, `14` as a result); all other e2e folders pass on UAT.
