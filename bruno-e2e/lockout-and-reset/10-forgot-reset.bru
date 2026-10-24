@@ -1,0 +1,21 @@
+meta {
+  name: forgot-reset
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/forgot-password/reset
+  body: json
+  auth: none
+}
+
+body:json {
+  { "resetToken": "{{resetToken}}", "newPassword": "NewPass123x" }
+}
+
+tests {
+  test("forgot reset", function () {
+    expect(res.status).to.equal(200);
+  });
+}

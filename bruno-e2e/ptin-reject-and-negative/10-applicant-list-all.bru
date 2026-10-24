@@ -1,0 +1,21 @@
+meta {
+  name: applicant-list-all
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/api/v1/ptin/applications
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{userToken}}
+}
+
+tests {
+  test("applicant list all", function () {
+    expect(res.status).to.equal(403);
+  });
+}

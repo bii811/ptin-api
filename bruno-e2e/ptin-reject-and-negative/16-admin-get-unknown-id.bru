@@ -1,0 +1,21 @@
+meta {
+  name: admin-get-unknown-id
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{baseUrl}}/api/v1/ptin/applications/00000000-0000-0000-0000-000000000000
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{adminToken}}
+}
+
+tests {
+  test("admin get unknown id", function () {
+    expect(res.status).to.equal(404);
+  });
+}

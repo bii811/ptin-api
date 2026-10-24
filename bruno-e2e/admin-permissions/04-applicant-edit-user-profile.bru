@@ -1,0 +1,25 @@
+meta {
+  name: applicant-edit-user-profile
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/api/v1/profile/users/00000000-0000-0000-0000-000000000000
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{userToken}}
+}
+
+body:json {
+  { "firstName": "X", "lastName": "Y" }
+}
+
+tests {
+  test("applicant edit user profile", function () {
+    expect(res.status).to.equal(403);
+  });
+}

@@ -1,0 +1,21 @@
+meta {
+  name: me-with-flow-token
+  type: http
+  seq: 17
+}
+
+get {
+  url: {{baseUrl}}/api/v1/auth/me
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{registrationToken}}
+}
+
+tests {
+  test("a flow token cannot stand in for an access token", function () {
+    expect(res.status).to.equal(401);
+  });
+}

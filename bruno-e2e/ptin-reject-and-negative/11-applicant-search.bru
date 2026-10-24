@@ -1,0 +1,21 @@
+meta {
+  name: applicant-search
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/api/v1/ptin/applications/search
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{userToken}}
+}
+
+tests {
+  test("applicant search", function () {
+    expect(res.status).to.equal(403);
+  });
+}

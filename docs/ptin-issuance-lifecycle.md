@@ -113,3 +113,26 @@ On success TaxRIS's confirmed given/family name replaces the submitted ones.
 - **Downstream effects of `ISSUED`.** The user can log in with the TIN and declare tax (`/tax-declarations`).
 - **Known gap.** A process crash between Tx 1 and Tx 2 leaves the application `APPROVED`; an admin can recover
   with `retry` (allowed from `APPROVED`).
+
+## 6. Remarks / TODO
+
+**Current rule: one PTIN application per user (any status, rejected included).** Planned: allow many per user
+in the future. Until then:
+
+- [ ] **Race condition.** The rule is enforced only in `SubmitPtinApplicationService` (`findByUserId`). There is no
+      unique constraint on `ptins.user_id` (only the plain `idx_ptins_user_id`), so two simultaneous submits can both
+      pass. Option: `CREATE UNIQUE INDEX uq_ptins_user_id ON ptins (user_id) WHERE deleted_at IS NULL`, mapping the
+      violation to the same 409; drop it in the migration that introduces many-per-user.
+- [ ] `idx_ptins_tin` is not unique, so nothing prevents one TIN being stored on two applications.
+- [ ] A rejected applicant can never reapply (by design today); decide the reapply rule for the many-per-user design.
+
+**When moving to many PTINs per user, revisit these 1:1 assumptions:**
+
+- [ ] `SubmitPtinApplicationService`: replace the "any application exists" check with the new rule (for example
+      one *open* application at a time, or one per `PtinType`).
+- [ ] `auth` → `TaxpayerTinLookupPort` / `FindIssuedTinUseCase` returns a single TIN: TIN login must resolve a TIN to
+      its owner, and the user's "primary" TIN needs defining.
+- [ ] `taxdeclaration` → `TaxpayerTinPort.findIssuedTin(userId)`: `DeclareTaxService` needs the caller to say which TIN
+      it declares under (and check the TIN belongs to them).
+- [ ] `GET /auth/me` exposes a single `tin`; becomes a list or a primary TIN.
+- [ ] Update `CLAUDE.md` and `docs/api-integration.md`, which both state the one-per-user rule.

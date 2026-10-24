@@ -1,0 +1,22 @@
+meta {
+  name: admin-search-rejected
+  type: http
+  seq: 25
+}
+
+get {
+  url: {{baseUrl}}/api/v1/ptin/applications/search?status=REJECTED&size=50
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{adminToken}}
+}
+
+tests {
+  test("rejected application is found by status search", function () {
+    expect(res.status).to.equal(200);
+    expect(res.body.data.content.some(a => a.id === bru.getVar("applicationId"))).to.equal(true);
+  });
+}

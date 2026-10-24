@@ -193,12 +193,15 @@ Multi-stage image (Gradle build → `eclipse-temurin:21-jre`), layered jar, non-
 - `bruno-e2e/` — new-user end-to-end flow (register → approve → TIN issued):
   `cd bruno-e2e && bru run new-user-flow --env uat --env-var adminPassword=<admin pw>`.
   Needs `otp.expose-in-response=true` and calls the real TaxRIS — **never run against prod**.
+  Also holds negative-path folders (`auth-negative`, `lockout-and-reset`, `admin-permissions`,
+  `ptin-reject-and-negative`, `tax-declaration-negative`, `labor-flow`); see `CLAUDE.md` for what each covers.
 - `postman/` — Postman collection.
 
 ## Known limitations
 
 - OTP delivery is a logging placeholder; no real SMS gateway yet.
 - Access tokens are not revocable before expiry.
+- One PTIN application per user is enforced in code only (no DB unique constraint); many-per-user is planned, see [docs/ptin-issuance-lifecycle.md](docs/ptin-issuance-lifecycle.md#6-remarks--todo).
 - No test coverage beyond a few domain tests and the context-load test.
 
 ## Contributing notes

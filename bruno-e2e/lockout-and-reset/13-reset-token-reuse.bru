@@ -1,0 +1,21 @@
+meta {
+  name: reset-token-reuse
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/forgot-password/reset
+  body: json
+  auth: none
+}
+
+body:json {
+  { "resetToken": "{{resetToken}}", "newPassword": "AnotherPass123x" }
+}
+
+tests {
+  test("a reset token is single-use", function () {
+    expect(res.status).to.equal(401);
+  });
+}

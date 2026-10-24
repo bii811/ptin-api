@@ -1,0 +1,39 @@
+meta {
+  name: submit-duplicate
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ptin/applications
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{userToken}}
+}
+
+body:json {
+  {
+    "ptinType": "INDIVIDUAL",
+    "givenName": "E2e",
+    "familyName": "Tester",
+    "gender": "M",
+    "nationality": "LA",
+    "birthDay": "19900101",
+    "hpNo": "0{{mobileNumber}}",
+    "email": "e2e@example.com",
+    "pubOffiYn": "N",
+    "indBusnOprYn": "N",
+    "pvtCoEmpYn": "N",
+    "divdIncYn": "N",
+    "rentIncYn": "N"
+  }
+}
+
+tests {
+  test("second application for the same user is refused", function () {
+    expect(res.status).to.equal(409);
+  });
+}

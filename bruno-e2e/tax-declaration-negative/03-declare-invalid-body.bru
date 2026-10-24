@@ -1,0 +1,25 @@
+meta {
+  name: declare-invalid-body
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/tax-declarations
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{userToken}}
+}
+
+body:json {
+  { "invoiceNumber": "INV-E2E" }
+}
+
+tests {
+  test("declare invalid body", function () {
+    expect(res.status).to.equal(400);
+  });
+}

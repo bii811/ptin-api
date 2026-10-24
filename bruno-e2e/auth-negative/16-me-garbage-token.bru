@@ -1,0 +1,25 @@
+meta {
+  name: me-garbage-token
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{baseUrl}}/api/v1/auth/me
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{garbageToken}}
+}
+
+script:pre-request {
+  bru.setVar("garbageToken", "not.a.jwt");
+}
+
+tests {
+  test("me garbage token", function () {
+    expect(res.status).to.equal(401);
+  });
+}

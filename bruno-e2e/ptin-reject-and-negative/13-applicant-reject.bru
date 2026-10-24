@@ -1,0 +1,25 @@
+meta {
+  name: applicant-reject
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ptin/applications/{{applicationId}}/reject
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{userToken}}
+}
+
+body:json {
+  { "reason": "nope" }
+}
+
+tests {
+  test("applicant reject", function () {
+    expect(res.status).to.equal(403);
+  });
+}

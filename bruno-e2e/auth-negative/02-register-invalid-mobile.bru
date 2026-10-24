@@ -1,0 +1,21 @@
+meta {
+  name: register-invalid-mobile
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/register/otp/request
+  body: json
+  auth: none
+}
+
+body:json {
+  { "mobileNumber": "123" }
+}
+
+tests {
+  test("register invalid mobile", function () {
+    expect(res.status).to.equal(400);
+  });
+}

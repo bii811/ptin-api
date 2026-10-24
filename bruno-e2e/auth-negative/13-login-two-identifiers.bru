@@ -1,0 +1,21 @@
+meta {
+  name: login-two-identifiers
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/login/password
+  body: json
+  auth: none
+}
+
+body:json {
+  { "mobileNumber": "{{mobileNumber}}", "username": "admin", "password": "whatever123" }
+}
+
+tests {
+  test("login two identifiers", function () {
+    expect(res.status).to.equal(400);
+  });
+}

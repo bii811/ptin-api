@@ -1,0 +1,39 @@
+meta {
+  name: submit-invalid-gender
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ptin/applications
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{userToken}}
+}
+
+body:json {
+  {
+    "ptinType": "INDIVIDUAL",
+    "givenName": "E2e",
+    "familyName": "Tester",
+    "gender": "X",
+    "nationality": "LA",
+    "birthDay": "19900101",
+    "hpNo": "0{{mobileNumber}}",
+    "email": "e2e@example.com",
+    "pubOffiYn": "N",
+    "indBusnOprYn": "N",
+    "pvtCoEmpYn": "N",
+    "divdIncYn": "N",
+    "rentIncYn": "N"
+  }
+}
+
+tests {
+  test("submit invalid gender", function () {
+    expect(res.status).to.equal(400);
+  });
+}

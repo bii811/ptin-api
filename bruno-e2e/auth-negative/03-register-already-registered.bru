@@ -1,0 +1,21 @@
+meta {
+  name: register-already-registered
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/register/otp/request
+  body: json
+  auth: none
+}
+
+body:json {
+  { "mobileNumber": "{{mobileNumber}}" }
+}
+
+tests {
+  test("register already registered", function () {
+    expect(res.status).to.equal(409);
+  });
+}

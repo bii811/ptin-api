@@ -1,0 +1,21 @@
+meta {
+  name: register-resend-cooldown
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/register/otp/request
+  body: json
+  auth: none
+}
+
+body:json {
+  { "mobileNumber": "{{otherMobile}}" }
+}
+
+tests {
+  test("immediate resend is throttled", function () {
+    expect(res.status).to.equal(429);
+  });
+}

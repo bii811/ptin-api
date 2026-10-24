@@ -1,0 +1,26 @@
+meta {
+  name: forgot-otp-verify
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/forgot-password/otp/verify
+  body: json
+  auth: none
+}
+
+body:json {
+  { "mobileNumber": "{{mobileNumber}}", "otpCode": "{{otpCode}}" }
+}
+
+script:post-response {
+  if (res.status === 200) bru.setVar("resetToken", res.body.data.token);
+}
+
+tests {
+  test("forgot otp verify", function () {
+    expect(res.status).to.equal(200);
+    expect(bru.getVar("resetToken")).to.be.a("string");
+  });
+}

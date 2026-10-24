@@ -1,0 +1,26 @@
+meta {
+  name: approve
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ptin/applications/{{applicationId}}/approve
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{adminToken}}
+}
+
+script:post-response {
+  if (res.status === 200) bru.setVar("issuanceStatus", res.body.data.status);
+}
+
+tests {
+  test("approve returns 200 whatever TaxRIS says; outcome is ISSUED or ISSUANCE_FAILED", function () {
+    expect(res.status).to.equal(200);
+    expect(["ISSUED", "ISSUANCE_FAILED"]).to.include(res.body.data.status);
+  });
+}

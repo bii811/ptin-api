@@ -1,0 +1,29 @@
+meta {
+  name: setup
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/actuator/health
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  // fresh identity per run, then reuse the new-user-flow requests for register + login
+  const digits = () => String(Math.floor(Math.random() * 1e8)).padStart(8, "0");
+  bru.setVar("mobileNumber", "20" + digits());
+  bru.setVar("userPassword", "E2e" + digits() + "a");
+  for (const r of ["02-register-otp-request", "03-register-otp-verify", "04-register-complete", "05-login-user", "06-me-before-ptin", "07-profile-update-if-needed", "09-login-admin"]) {
+    await bru.runRequest("new-user-flow/" + r);
+  }
+}
+
+tests {
+  test("api up, applicant registered and logged in", function () {
+    expect(res.status).to.equal(200);
+    expect(bru.getVar("userToken")).to.be.a("string");
+    expect(bru.getVar("adminToken"), "admin login failed - check adminPassword").to.be.a("string");
+  });
+}

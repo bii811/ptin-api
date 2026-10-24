@@ -1,0 +1,21 @@
+meta {
+  name: admin-retry-rejected
+  type: http
+  seq: 22
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ptin/applications/{{applicationId}}/retry
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{adminToken}}
+}
+
+tests {
+  test("admin retry rejected", function () {
+    expect(res.status).to.equal(409);
+  });
+}

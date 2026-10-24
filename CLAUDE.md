@@ -66,6 +66,20 @@ Each run registers a fresh random mobile number (no delete endpoint, so test use
 from the response message, so it needs `otp.expose-in-response=true` — **never run it against prod**. Approve calls
 the real TaxRIS, so the run fails at `10-ptin-approve` if issuance fails (the test asserts `status == ISSUED`).
 
+Extra scenario folders in the same collection (each is self-contained: it registers a fresh applicant and, where
+needed, logs in as admin by reusing the `new-user-flow` requests; all need `otp.expose-in-response=true`):
+
+| Folder | Covers |
+|---|---|
+| `auth-negative` | invalid/duplicate mobile (400/409), OTP wrong code, resend cooldown and attempt ceiling (429), bad flow token (401), wrong password / unknown account (401), bad login identifiers (400), missing/garbage/flow token on `/auth/me` (401), password change policy |
+| `lockout-and-reset` | 5 failed logins lock (423), forgot-password reset clears the lock, old password rejected, reset token single-use, no account enumeration |
+| `admin-permissions` | applicant gets 403 on admin endpoints, temporary-password flow (404 unknown, forced reset, temp password stops working) |
+| `ptin-reject-and-negative` | profile 422/400, submit validation, one-application-per-user 409, applicant 403s, admin edit, reject, and 409s on re-reject / approve / retry / edit of a REJECTED application, no reapply |
+| `tax-declaration-negative` | declare without an issued PTIN (422), invalid body (400), no token (401), unknown id (404) |
+| `labor-flow` | LABOR submit, `managePTinInformation` audited in TaxRIS logs, approve outcome ISSUED or ISSUANCE_FAILED, retry branch (409 if ISSUED, else `PTIN_RETRY` attempt 2) |
+
+Run one with `cd bruno-e2e && bru run <folder> --env uat --env-var adminPassword=<admin pw>`. Not covered: a successful tax declaration and a second user reading someone else's application.
+
 ## Configuration
 
 `application.yaml` is the base config (env-var placeholders with dev-friendly defaults, e.g.

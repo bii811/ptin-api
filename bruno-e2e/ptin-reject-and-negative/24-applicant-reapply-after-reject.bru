@@ -1,0 +1,39 @@
+meta {
+  name: applicant-reapply-after-reject
+  type: http
+  seq: 24
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ptin/applications
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{userToken}}
+}
+
+body:json {
+  {
+    "ptinType": "INDIVIDUAL",
+    "givenName": "E2e",
+    "familyName": "Tester",
+    "gender": "M",
+    "nationality": "LA",
+    "birthDay": "19900101",
+    "hpNo": "0{{mobileNumber}}",
+    "email": "e2e@example.com",
+    "pubOffiYn": "N",
+    "indBusnOprYn": "N",
+    "pvtCoEmpYn": "N",
+    "divdIncYn": "N",
+    "rentIncYn": "N"
+  }
+}
+
+tests {
+  test("a rejected applicant cannot reapply (one application per user)", function () {
+    expect(res.status).to.equal(409);
+  });
+}

@@ -1,0 +1,21 @@
+meta {
+  name: admin-approve-rejected
+  type: http
+  seq: 21
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ptin/applications/{{applicationId}}/approve
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{adminToken}}
+}
+
+tests {
+  test("admin approve rejected", function () {
+    expect(res.status).to.equal(409);
+  });
+}

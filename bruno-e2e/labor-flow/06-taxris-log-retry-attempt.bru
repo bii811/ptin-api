@@ -1,0 +1,28 @@
+meta {
+  name: taxris-log-retry-attempt
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/v1/admin/taxris-logs?referenceId={{applicationId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{adminToken}}
+}
+
+script:pre-request {
+  if (bru.getVar("issuanceStatus") === "ISSUED") bru.runner.skipRequest();
+}
+
+tests {
+  test("retry was audited as PTIN_RETRY, attempt 2", function () {
+    expect(res.status).to.equal(200);
+    const retry = res.body.data.content.find(r => r.functionSource === "PTIN_RETRY");
+    expect(retry, "no PTIN_RETRY row").to.exist;
+    expect(retry.attemptNo).to.equal(2);
+  });
+}

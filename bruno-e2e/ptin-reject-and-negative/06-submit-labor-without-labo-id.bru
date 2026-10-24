@@ -1,0 +1,39 @@
+meta {
+  name: submit-labor-without-labo-id
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ptin/applications
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{userToken}}
+}
+
+body:json {
+  {
+    "ptinType": "LABOR",
+    "givenName": "E2e",
+    "familyName": "Tester",
+    "gender": "M",
+    "nationality": "LA",
+    "birthDay": "19900101",
+    "hpNo": "0{{mobileNumber}}",
+    "email": "e2e@example.com",
+    "pubOffiYn": "N",
+    "indBusnOprYn": "N",
+    "pvtCoEmpYn": "N",
+    "divdIncYn": "N",
+    "rentIncYn": "N"
+  }
+}
+
+tests {
+  test("submit labor without labo id", function () {
+    expect(res.status).to.equal(400);
+  });
+}

@@ -1,0 +1,22 @@
+meta {
+  name: login-unknown-mobile
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/login/password
+  body: json
+  auth: none
+}
+
+body:json {
+  { "mobileNumber": "2099999999", "password": "whatever123" }
+}
+
+tests {
+  test("unknown account gets the same 401 as a wrong password", function () {
+    expect(res.status).to.equal(401);
+    expect(res.body.message).to.equal("Invalid username or password");
+  });
+}

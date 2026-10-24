@@ -1,0 +1,26 @@
+meta {
+  name: admin-reject
+  type: http
+  seq: 19
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ptin/applications/{{applicationId}}/reject
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{adminToken}}
+}
+
+body:json {
+  { "reason": "Incomplete documents" }
+}
+
+tests {
+  test("admin reject", function () {
+    expect(res.status).to.equal(200);
+    expect(res.body.data.status).to.equal("REJECTED");
+  });
+}

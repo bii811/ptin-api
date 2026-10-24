@@ -1,0 +1,25 @@
+meta {
+  name: admin-reject-without-reason
+  type: http
+  seq: 18
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ptin/applications/{{applicationId}}/reject
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{adminToken}}
+}
+
+body:json {
+  { "reason": "" }
+}
+
+tests {
+  test("admin reject without reason", function () {
+    expect(res.status).to.equal(400);
+  });
+}

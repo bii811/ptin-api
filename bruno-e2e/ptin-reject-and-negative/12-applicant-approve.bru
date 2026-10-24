@@ -1,0 +1,21 @@
+meta {
+  name: applicant-approve
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ptin/applications/{{applicationId}}/approve
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{userToken}}
+}
+
+tests {
+  test("applicant approve", function () {
+    expect(res.status).to.equal(403);
+  });
+}

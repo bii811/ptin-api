@@ -1,0 +1,25 @@
+meta {
+  name: profile-blank-name
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/api/v1/profile/me
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{userToken}}
+}
+
+body:json {
+  { "firstName": "", "lastName": "" }
+}
+
+tests {
+  test("profile blank name", function () {
+    expect(res.status).to.equal(400);
+  });
+}

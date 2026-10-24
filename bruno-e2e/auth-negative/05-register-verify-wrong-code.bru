@@ -1,0 +1,25 @@
+meta {
+  name: register-verify-wrong-code
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/register/otp/verify
+  body: json
+  auth: none
+}
+
+body:json {
+  { "mobileNumber": "{{otherMobile}}", "otpCode": "{{wrongOtp}}" }
+}
+
+script:pre-request {
+  bru.setVar("wrongOtp", bru.getVar("otherOtp") === "000000" ? "111111" : "000000");
+}
+
+tests {
+  test("register verify wrong code", function () {
+    expect(res.status).to.equal(400);
+  });
+}

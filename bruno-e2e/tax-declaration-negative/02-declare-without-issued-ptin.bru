@@ -1,0 +1,44 @@
+meta {
+  name: declare-without-issued-ptin
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/tax-declarations
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{userToken}}
+}
+
+body:json {
+  {
+    "invoiceNumber": "INV-E2E",
+    "invoiceDate": "20260101",
+    "saleCount": "1",
+    "supplyAmount": "100",
+    "saleAmount": "110",
+    "items": [
+      {
+        "hsCode": "8517",
+        "hsName": "Telephone sets",
+        "saleCount": "1",
+        "unitSale": "EA",
+        "unitSaleAmount": "100",
+        "supplyAmount": "100",
+        "exciseAmount": "0",
+        "vatAmount": "10",
+        "saleAmount": "110"
+      }
+    ]
+  }
+}
+
+tests {
+  test("declaring tax needs an issued PTIN", function () {
+    expect(res.status).to.equal(422);
+  });
+}

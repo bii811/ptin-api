@@ -1,0 +1,25 @@
+meta {
+  name: taxris-log-uses-manage-ptin
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/v1/admin/taxris-logs?referenceId={{applicationId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{adminToken}}
+}
+
+tests {
+  test("LABOR is issued through managePTinInformation and the call is audited", function () {
+    expect(res.status).to.equal(200);
+    const rows = res.body.data.content;
+    expect(rows.length).to.be.greaterThan(0);
+    expect(rows[rows.length - 1].functionSource).to.equal("PTIN_APPROVE");
+    expect(rows[rows.length - 1].endpointUrl).to.contain("managePTinInformation");
+  });
+}

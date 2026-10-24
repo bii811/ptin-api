@@ -1,0 +1,21 @@
+meta {
+  name: register-verify-correct-after-ceiling
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/register/otp/verify
+  body: json
+  auth: none
+}
+
+body:json {
+  { "mobileNumber": "{{otherMobile}}", "otpCode": "{{otherOtp}}" }
+}
+
+tests {
+  test("correct code no longer accepted after the ceiling", function () {
+    expect(res.status).to.equal(429);
+  });
+}

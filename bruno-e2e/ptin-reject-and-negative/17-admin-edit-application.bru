@@ -1,0 +1,40 @@
+meta {
+  name: admin-edit-application
+  type: http
+  seq: 17
+}
+
+put {
+  url: {{baseUrl}}/api/v1/ptin/applications/{{applicationId}}
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{adminToken}}
+}
+
+body:json {
+  {
+    "ptinType": "INDIVIDUAL",
+    "givenName": "Edited",
+    "familyName": "Tester",
+    "gender": "M",
+    "nationality": "LA",
+    "birthDay": "19900101",
+    "hpNo": "0{{mobileNumber}}",
+    "email": "e2e@example.com",
+    "pubOffiYn": "N",
+    "indBusnOprYn": "N",
+    "pvtCoEmpYn": "N",
+    "divdIncYn": "N",
+    "rentIncYn": "N"
+  }
+}
+
+tests {
+  test("admin edit application", function () {
+    expect(res.status).to.equal(200);
+    expect(res.body.data.status).to.equal("PENDING_APPROVAL");
+  });
+}

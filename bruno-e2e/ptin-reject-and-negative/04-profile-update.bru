@@ -1,0 +1,26 @@
+meta {
+  name: profile-update
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/api/v1/profile/me
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{userToken}}
+}
+
+body:json {
+  { "firstName": "E2e", "lastName": "Tester" }
+}
+
+tests {
+  test("profile update", function () {
+    expect(res.status).to.equal(200);
+    expect(res.body.data.complete).to.equal(true);
+  });
+}

@@ -1,0 +1,21 @@
+meta {
+  name: applicant-read-taxris-logs
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/admin/taxris-logs
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{userToken}}
+}
+
+tests {
+  test("applicant read taxris logs", function () {
+    expect(res.status).to.equal(403);
+  });
+}

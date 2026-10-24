@@ -1,0 +1,30 @@
+meta {
+  name: register-other-otp-request
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/register/otp/request
+  body: json
+  auth: none
+}
+
+body:json {
+  { "mobileNumber": "{{otherMobile}}" }
+}
+
+script:pre-request {
+  bru.setVar("otherMobile", "20" + String(Math.floor(Math.random() * 1e8)).padStart(8, "0"));
+}
+
+script:post-response {
+  const m = (res.body.message || "").match(/OTP: (\d+)/);
+  if (m) bru.setVar("otherOtp", m[1]);
+}
+
+tests {
+  test("otp issued for a second number", function () {
+    expect(res.status).to.equal(200);
+  });
+}

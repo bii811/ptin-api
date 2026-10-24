@@ -1,0 +1,28 @@
+meta {
+  name: forgot-otp-request
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/forgot-password/otp/request
+  body: json
+  auth: none
+}
+
+body:json {
+  { "mobileNumber": "{{mobileNumber}}" }
+}
+
+script:post-response {
+  const m = (res.body.message || "").match(/OTP: (\d+)/);
+  if (m) bru.setVar("otpCode", m[1]);
+  bru.setVar("genericMessage", res.body.message);
+}
+
+tests {
+  test("forgot otp request", function () {
+    expect(res.status).to.equal(200);
+    expect(bru.getVar("otpCode"), "OTP not echoed - is otp.expose-in-response on?").to.be.a("string");
+  });
+}

@@ -1,0 +1,26 @@
+meta {
+  name: register-verify-attempts-exceeded
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/register/otp/verify
+  body: json
+  auth: none
+}
+
+body:json {
+  { "mobileNumber": "{{otherMobile}}", "otpCode": "{{wrongOtp}}" }
+}
+
+script:pre-request {
+  // attempt 1 was step 05; spend attempts 2-4 here, this request is the 5th
+  for (let i = 0; i < 3; i++) await bru.runRequest("auth-negative/05-register-verify-wrong-code");
+}
+
+tests {
+  test("5th wrong code hits the attempt ceiling", function () {
+    expect(res.status).to.equal(429);
+  });
+}

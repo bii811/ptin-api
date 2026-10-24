@@ -1,0 +1,30 @@
+meta {
+  name: retry
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ptin/applications/{{applicationId}}/retry
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{adminToken}}
+}
+
+script:post-response {
+  bru.setVar("retryStatus", res.status);
+}
+
+tests {
+  test("retry: 409 once ISSUED, otherwise re-attempts issuance", function () {
+    if (bru.getVar("issuanceStatus") === "ISSUED") {
+    expect(res.status).to.equal(409);
+    } else {
+    expect(res.status).to.equal(200);
+    expect(["ISSUED", "ISSUANCE_FAILED"]).to.include(res.body.data.status);
+    }
+  });
+}

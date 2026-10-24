@@ -1,0 +1,25 @@
+meta {
+  name: admin-reject-again
+  type: http
+  seq: 20
+}
+
+post {
+  url: {{baseUrl}}/api/v1/ptin/applications/{{applicationId}}/reject
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{adminToken}}
+}
+
+body:json {
+  { "reason": "again" }
+}
+
+tests {
+  test("admin reject again", function () {
+    expect(res.status).to.equal(409);
+  });
+}
