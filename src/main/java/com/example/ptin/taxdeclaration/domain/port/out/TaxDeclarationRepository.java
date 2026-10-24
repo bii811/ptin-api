@@ -12,5 +12,11 @@ public interface TaxDeclarationRepository {
 
     List<TaxDeclaration> findByUserId(UserId userId);
 
+    /** Loads the row with a write lock (call inside a transaction) so concurrent retries serialise. */
+    Optional<TaxDeclaration> findByIdForUpdate(TaxDeclarationId id);
+
+    /** A declaration for this invoice that is not FAILED (pending, submitted or unknown), other than {@code excludeId}. */
+    boolean existsActive(String tin, String invoiceNumber, TaxDeclarationId excludeId);
+
     TaxDeclaration save(TaxDeclaration declaration);
 }

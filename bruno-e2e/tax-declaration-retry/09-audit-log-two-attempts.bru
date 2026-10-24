@@ -1,0 +1,23 @@
+meta {
+  name: audit-log-two-attempts
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/api/v1/admin/taxris-logs?referenceId={{declarationId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{adminToken}}
+}
+
+tests {
+  test("both attempts are in the TaxRIS audit log with attempt numbers 1 and 2", function () {
+    expect(res.status).to.equal(200);
+    const rows = res.body.data.content.filter(r => r.functionSource === "TAX_DECLARATION_SUBMIT");
+    expect(rows.map(r => r.attemptNo).sort()).to.deep.equal([1, 2]);
+  });
+}

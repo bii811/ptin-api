@@ -78,6 +78,7 @@ needed, logs in as admin by reusing the `new-user-flow` requests; all need `otp.
 | `tax-declaration-negative` | declare without an issued PTIN (422), invalid body (400), no token (401), unknown id (404) |
 | `labor-flow` | LABOR submit, `managePTinInformation` audited in TaxRIS logs, approve outcome ISSUED or ISSUANCE_FAILED, retry branch (409 if ISSUED, else `PTIN_RETRY` attempt 2) |
 | `error-handling` | framework-level errors keep their status and the `ApiResponse` envelope: malformed JSON / empty body (400), wrong content type (415), wrong method (405), unknown path (404, 401 when anonymous), invalid UUID / sort / date / enum (400) |
+| `tax-declaration-retry` | **local only, needs `scripts/fake-taxris.py`**: rejected declaration is `FAILED` + retryable, retry succeeds as attempt 2 (audit log has attempts 1 and 2), duplicate invoice 409, `SUBMITTED` not retryable, timeout is `UNKNOWN` and retryable |
 
 Run one with `cd bruno-e2e && bru run <folder> --env uat --env-var adminPassword=<admin pw>`. Not covered: a successful tax declaration and a second user reading someone else's application.
 
@@ -163,6 +164,19 @@ in that gateway's Javadoc — read it before changing this flow:
 - The read, the external HTTP call, and the write are deliberately **not** wrapped in one transaction
   (`PtinMediationCoordinator` itself isn't `@Transactional`) so a DB connection doesn't sit idle for
   the duration of the outbound call.
+
+### Tax declarations
+
+`DeclareTaxService` saves the declaration as `PENDING` (committed, so a crash cannot leave TaxRIS holding a declaration we
+have no record of), calls TaxRIS via `TaxSubmissionCoordinator` (not `@Transactional`: no DB connection across the HTTP
+call), then updates the row: `SUBMITTED`, `FAILED` (explicit rejection) or `UNKNOWN` (no usable reply, TaxRIS may have
+recorded it). `POST /tax-declarations/{id}/retry` (owner only) claims the row in `TaxDeclarationTransactionalGateway`
+(`FOR UPDATE`, back to `PENDING`, `retry_count++`) and resubmits; `attemptNo = retryCount + 1` goes to the audit log. A
+`PENDING` older than 2 min (`TaxDeclaration.STALE_PENDING`) is treated as abandoned and is retryable. Migration V9 adds a
+unique index on `(tin, invoice_number)` for non-`FAILED` rows (one live declaration per invoice, 409 otherwise).
+`scripts/fake-taxris.py` is a local fake TaxRIS (rejection on first call for `*REJECT*` invoices, timeout for `*HANG*`)
+for the `bruno-e2e/tax-declaration-retry` scenario: start it, then run the app with
+`PTIN_MEDIATION_BASE_URL=http://localhost:9099`.
 
 ### Auth model
 

@@ -78,7 +78,8 @@ PTIN application states: `PENDING_APPROVAL → APPROVED → ISSUED | ISSUANCE_FA
   approve / reject / retry / edit / search (paged).
 - **TaxRIS issuance** with retry on failure, and a full **audit trail of every outbound call**
   (`GET /api/v1/admin/taxris-logs`, `HASH_KEY` redacted).
-- **Tax declarations**: invoice-level declarations by taxpayers with an issued TIN, forwarded to TaxRIS.
+- **Tax declarations**: invoice-level declarations by taxpayers with an issued TIN, forwarded to TaxRIS; saved before
+  sending, outcome `SUBMITTED` / `FAILED` / `UNKNOWN`, owner retry, one live declaration per invoice, every attempt audited.
 - **Roles**: `APPLICANT`, `ADMIN`, `SUPERADMIN` (inherits `ADMIN`).
 - Uniform `ApiResponse<T>` envelope and consistent HTTP error mapping.
 
@@ -89,7 +90,7 @@ PTIN application states: `PENDING_APPROVAL → APPROVED → ISSUED | ISSUANCE_FA
 | `auth` | `POST register/otp/request`, `register/otp/verify`, `register/complete`, `login/password`, `forgot-password/otp/request`, `forgot-password/otp/verify`, `forgot-password/reset`, `password`; `GET me` |
 | `profile` | `GET/PUT me`; `PUT users/{userId}` (admin) |
 | `ptin/applications` | `POST` submit; `GET` mine / `{id}`; admin: `GET search`, `PUT {id}`, `POST {id}/approve`, `{id}/reject`, `{id}/retry` |
-| `tax-declarations` | `POST`, `GET`, `GET {id}` (own) |
+| `tax-declarations` | `POST`, `GET me`, `GET {id}`, `POST {id}/retry` (own) |
 | `admin` | `POST users/temporary-password`; `GET taxris-logs` |
 
 PTIN issuance lifecycle: [docs/ptin-issuance-lifecycle.md](docs/ptin-issuance-lifecycle.md). Full request/response reference: [docs/api-integration.md](docs/api-integration.md) and

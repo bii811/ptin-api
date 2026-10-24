@@ -30,20 +30,21 @@ class CrsPfmMediationRestAdapter implements TaxMediationClient {
     public SubmissionResult submit(TaxDeclaration declaration) {
         SndCrsRequest request = SndCrsRequest.from(declaration, properties.hashKey());
         CallContext ctx = new CallContext(
-                FUNCTION_SOURCE, declaration.getId().toString(), declaration.getUserId().toString(), 1);
+                FUNCTION_SOURCE, declaration.getId().toString(), declaration.getUserId().toString(),
+                declaration.attemptNo());
         Exchange exchange = taxRisClient.post(SND_CRS_PATH, request, ctx);
 
         if (exchange.status() == null) {
-            return SubmissionResult.failure(null, exchange.error());
+            return SubmissionResult.unknown(exchange.error());
         }
         SndCrsResponse response;
         try {
             response = objectMapper.readValue(exchange.body(), SndCrsResponse.class);
         } catch (RuntimeException e) {
-            return SubmissionResult.failure(null, "Unparseable response from mediation service (HTTP " + exchange.status() + ")");
+            return SubmissionResult.unknown("Unparseable response from mediation service (HTTP " + exchange.status() + ")");
         }
         if (response == null) {
-            return SubmissionResult.failure(null, "Empty response from mediation service");
+            return SubmissionResult.unknown("Empty response from mediation service");
         }
         if (!response.isSuccess()) {
             return SubmissionResult.failure(response.code(), response.message());

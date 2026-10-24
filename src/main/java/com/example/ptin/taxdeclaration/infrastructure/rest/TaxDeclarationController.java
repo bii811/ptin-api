@@ -6,6 +6,7 @@ import com.example.ptin.taxdeclaration.domain.model.TaxDeclarationId;
 import com.example.ptin.taxdeclaration.domain.port.in.DeclareTaxUseCase;
 import com.example.ptin.taxdeclaration.domain.port.in.GetTaxDeclarationUseCase;
 import com.example.ptin.taxdeclaration.domain.port.in.ListMyTaxDeclarationsUseCase;
+import com.example.ptin.taxdeclaration.domain.port.in.RetryTaxDeclarationUseCase;
 import com.example.ptin.taxdeclaration.infrastructure.rest.request.DeclareTaxRequest;
 import com.example.ptin.taxdeclaration.infrastructure.rest.response.TaxDeclarationResponse;
 import jakarta.validation.Valid;
@@ -28,14 +29,17 @@ public class TaxDeclarationController {
     private final DeclareTaxUseCase declareTaxUseCase;
     private final GetTaxDeclarationUseCase getTaxDeclarationUseCase;
     private final ListMyTaxDeclarationsUseCase listMyTaxDeclarationsUseCase;
+    private final RetryTaxDeclarationUseCase retryTaxDeclarationUseCase;
 
     public TaxDeclarationController(
             DeclareTaxUseCase declareTaxUseCase,
             GetTaxDeclarationUseCase getTaxDeclarationUseCase,
-            ListMyTaxDeclarationsUseCase listMyTaxDeclarationsUseCase) {
+            ListMyTaxDeclarationsUseCase listMyTaxDeclarationsUseCase,
+            RetryTaxDeclarationUseCase retryTaxDeclarationUseCase) {
         this.declareTaxUseCase = declareTaxUseCase;
         this.getTaxDeclarationUseCase = getTaxDeclarationUseCase;
         this.listMyTaxDeclarationsUseCase = listMyTaxDeclarationsUseCase;
+        this.retryTaxDeclarationUseCase = retryTaxDeclarationUseCase;
     }
 
     @PostMapping
@@ -45,6 +49,13 @@ public class TaxDeclarationController {
             @Valid @RequestBody DeclareTaxRequest request) {
         TaxDeclarationId id = declareTaxUseCase.declare(request.toCommand(principal.userId()));
         var declaration = getTaxDeclarationUseCase.getById(id, principal.userId());
+        return ApiResponse.success(TaxDeclarationResponse.from(declaration));
+    }
+
+    @PostMapping("/{id}/retry")
+    public ApiResponse<TaxDeclarationResponse> retry(
+            @AuthenticationPrincipal AuthenticatedPrincipal principal, @PathVariable UUID id) {
+        var declaration = retryTaxDeclarationUseCase.retry(new TaxDeclarationId(id), principal.userId());
         return ApiResponse.success(TaxDeclarationResponse.from(declaration));
     }
 

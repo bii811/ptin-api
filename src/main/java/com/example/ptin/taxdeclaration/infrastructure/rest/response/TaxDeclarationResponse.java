@@ -25,7 +25,10 @@ public record TaxDeclarationResponse(
         List<TaxInvoiceLineItemResponse> items,
         Instant submittedAt,
         String resultCode,
-        String resultMessage) {
+        String resultMessage,
+        int retryCount,
+        Instant lastAttemptAt,
+        boolean retryable) {
 
     public static TaxDeclarationResponse from(TaxDeclaration declaration) {
         return new TaxDeclarationResponse(
@@ -49,6 +52,9 @@ public record TaxDeclarationResponse(
                 declaration.getItems().stream().map(TaxInvoiceLineItemResponse::from).toList(),
                 declaration.getSubmittedAt(),
                 declaration.getResultCode(),
-                declaration.getResultMessage());
+                declaration.getResultMessage(),
+                declaration.getRetryCount(),
+                declaration.getLastAttemptAt(),
+                declaration.isRetryable(Instant.now()));
     }
 }

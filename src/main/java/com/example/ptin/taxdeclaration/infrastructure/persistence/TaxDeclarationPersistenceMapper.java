@@ -45,7 +45,18 @@ class TaxDeclarationPersistenceMapper {
                 writeItems(declaration.getItems()),
                 declaration.getSubmittedAt(),
                 declaration.getResultCode(),
-                declaration.getResultMessage());
+                declaration.getResultMessage(),
+                declaration.getRetryCount(),
+                declaration.getLastAttemptAt());
+    }
+
+    /** Copies the fields that change after creation onto an already-persisted row. */
+    void updateEntity(TaxDeclarationJpaEntity entity, TaxDeclaration declaration) {
+        entity.setStatus(declaration.getStatus().name());
+        entity.setResultCode(declaration.getResultCode());
+        entity.setResultMessage(declaration.getResultMessage());
+        entity.setRetryCount(declaration.getRetryCount());
+        entity.setLastAttemptAt(declaration.getLastAttemptAt());
     }
 
     TaxDeclaration toDomain(TaxDeclarationJpaEntity entity) {
@@ -73,7 +84,9 @@ class TaxDeclarationPersistenceMapper {
                 items,
                 entity.getSubmittedAt(),
                 entity.getResultCode(),
-                entity.getResultMessage());
+                entity.getResultMessage(),
+                entity.getRetryCount(),
+                entity.getLastAttemptAt());
     }
 
     private String writeItems(List<TaxInvoiceLineItem> items) {

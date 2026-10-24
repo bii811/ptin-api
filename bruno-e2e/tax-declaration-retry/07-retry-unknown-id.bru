@@ -1,0 +1,21 @@
+meta {
+  name: retry-unknown-id
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/api/v1/tax-declarations/00000000-0000-0000-0000-000000000000/retry
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{userToken}}
+}
+
+tests {
+  test("retry unknown id", function () {
+    expect(res.status).to.equal(404);
+  });
+}

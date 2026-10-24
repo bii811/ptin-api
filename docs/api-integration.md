@@ -346,14 +346,43 @@ The declaration is submitted to TaxRIS **synchronously** and the stored outcome 
   "...": "...", "items": [ ], "submittedAt": "2026-10-08T05:10:00Z", "resultCode": "000", "resultMessage": "Success" }, "message": null }
 ```
 
-`status` is `SUBMITTED` or `FAILED` (with `resultCode` / `resultMessage` explaining why). As with PTIN
-issuance, a TaxRIS rejection still returns HTTP **201** — inspect `status`. A failed declaration is not
-retried automatically; submit a new one.
+The declaration is saved as `PENDING` first, then sent to TaxRIS, then updated with the outcome. `status` is:
+
+| `status` | Meaning | `retryable` |
+|---|---|---|
+| `SUBMITTED` | TaxRIS accepted it (`resultCode` `000`). | no |
+| `FAILED` | TaxRIS explicitly rejected it; `resultCode` / `resultMessage` say why. | yes |
+| `UNKNOWN` | No usable reply (timeout, transport error, unparseable body); TaxRIS **may** have recorded it. `resultCode` is `null`. | yes |
+| `PENDING` | Attempt in flight, or abandoned (a `PENDING` older than 2 minutes counts as abandoned and is retryable). | only when abandoned |
+
+As with PTIN issuance, a TaxRIS rejection still returns HTTP **201**: inspect `status`. The response also carries
+`retryCount` (attempts after the first) and `lastAttemptAt`. Every attempt is written to the TaxRIS audit log
+(`GET /admin/taxris-logs?referenceId=<declarationId>`, function `TAX_DECLARATION_SUBMIT`, `attemptNo` = `retryCount + 1`).
+
+**One live declaration per invoice.** A declaration for the same `invoiceNumber` (per TIN) is refused with **409**
+while another one is `PENDING`, `SUBMITTED` or `UNKNOWN`. A `FAILED` one does not block: retry it, or correct the
+data and file a new declaration. A DB unique index enforces this under concurrency.
+
+> Retrying an `UNKNOWN` declaration can double-submit if TaxRIS does not reject a repeated `INV_NO`; confirm TaxRIS's
+> behaviour before automating retries.
 
 | Status | Meaning |
 |---|---|
 | 400 | Validation failure |
+| 409 | Same invoice already has a live declaration |
 | 422 | Caller has no issued PTIN |
+
+### `POST /tax-declarations/{id}/retry` → 200
+
+Owner only, no body. Re-sends a `FAILED`, `UNKNOWN` or abandoned `PENDING` declaration and returns it in the same
+shape as above (`retryCount` incremented). The row is locked and flipped to `PENDING` first, so concurrent retries
+cannot both reach TaxRIS.
+
+| Status | Meaning |
+|---|---|
+| 403 | Not your declaration |
+| 404 | Unknown id |
+| 409 | `SUBMITTED` or in-flight `PENDING` (not retryable), or a newer declaration for the invoice is live |
 
 ### Read
 

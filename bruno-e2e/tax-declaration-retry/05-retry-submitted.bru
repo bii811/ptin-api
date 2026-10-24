@@ -1,0 +1,26 @@
+meta {
+  name: retry-submitted
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/v1/tax-declarations/{{declarationId}}/retry
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{userToken}}
+}
+
+tests {
+  test("retry of the FAILED declaration succeeds as the second attempt", function () {
+    expect(res.status).to.equal(200);
+    const d = res.body.data;
+    expect(d.id).to.equal(bru.getVar("declarationId"));
+    expect(d.status).to.equal("SUBMITTED");
+    expect(d.retryCount).to.equal(1);
+    expect(d.retryable).to.equal(false);
+  });
+}

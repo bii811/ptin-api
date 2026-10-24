@@ -1,13 +1,17 @@
 package com.example.ptin.taxdeclaration.domain.model;
 
-import com.example.ptin.shared.validation.FieldValidation;
 import com.example.ptin.shared.identity.UserId;
+import com.example.ptin.shared.validation.FieldValidation;
+import com.example.ptin.taxdeclaration.domain.exception.TaxDeclarationNotRetryableException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import lombok.Getter;
 
 @Getter
 public class TaxDeclaration {
+
+    static final Duration STALE_PENDING = Duration.ofMinutes(2);
 
     private final TaxDeclarationId id;
     private final UserId userId;
@@ -32,6 +36,9 @@ public class TaxDeclaration {
     private final Instant submittedAt;
     private String resultCode;
     private String resultMessage;
+    private int retryCount;
+    /** Start of the latest attempt; a PENDING row older than {@link #STALE_PENDING} is treated as an abandoned attempt. */
+    private Instant lastAttemptAt;
 
     private TaxDeclaration(
             TaxDeclarationId id,
@@ -54,7 +61,9 @@ public class TaxDeclaration {
             List<TaxInvoiceLineItem> items,
             Instant submittedAt,
             String resultCode,
-            String resultMessage) {
+            String resultMessage,
+            int retryCount,
+            Instant lastAttemptAt) {
         FieldValidation.requireNotBlank("tin", tin);
         FieldValidation.requireMaxLength("tin", tin, 12);
         FieldValidation.requireNotBlank("invoiceNumber", invoiceNumber);
@@ -100,6 +109,8 @@ public class TaxDeclaration {
         this.submittedAt = submittedAt;
         this.resultCode = resultCode;
         this.resultMessage = resultMessage;
+        this.retryCount = retryCount;
+        this.lastAttemptAt = lastAttemptAt;
     }
 
     public static TaxDeclaration declare(
@@ -119,6 +130,7 @@ public class TaxDeclaration {
             String saleCancelCount,
             String saleCancelAmount,
             List<TaxInvoiceLineItem> items) {
+        Instant now = Instant.now();
         return new TaxDeclaration(
                 TaxDeclarationId.generate(),
                 userId,
@@ -138,9 +150,11 @@ public class TaxDeclaration {
                 saleCancelCount,
                 saleCancelAmount,
                 items,
-                Instant.now(),
+                now,
                 null,
-                null);
+                null,
+                0,
+                now);
     }
 
     public static TaxDeclaration reconstitute(
@@ -164,11 +178,13 @@ public class TaxDeclaration {
             List<TaxInvoiceLineItem> items,
             Instant submittedAt,
             String resultCode,
-            String resultMessage) {
+            String resultMessage,
+            int retryCount,
+            Instant lastAttemptAt) {
         return new TaxDeclaration(
                 id, userId, status, tin, invoiceNumber, invoiceDate, buyerTin, buyerFullName, saleCount, supplyAmount,
                 serviceFee, exciseAmount, vatAmount, saleAmount, discountAmount, saleCancelCount, saleCancelAmount,
-                items, submittedAt, resultCode, resultMessage);
+                items, submittedAt, resultCode, resultMessage, retryCount, lastAttemptAt);
     }
 
     public void markSubmitted(String resultCode, String resultMessage) {
@@ -183,6 +199,35 @@ public class TaxDeclaration {
         this.status = TaxDeclarationStatus.FAILED;
         this.resultCode = resultCode;
         this.resultMessage = resultMessage;
+    }
+
+    public void markUnknown(String resultMessage) {
+        requirePending();
+        this.status = TaxDeclarationStatus.UNKNOWN;
+        this.resultCode = null;
+        this.resultMessage = resultMessage;
+    }
+
+    /** Whether {@link #startRetry} would be accepted now. */
+    public boolean isRetryable(Instant now) {
+        return status == TaxDeclarationStatus.FAILED
+                || status == TaxDeclarationStatus.UNKNOWN
+                || (status == TaxDeclarationStatus.PENDING && !now.isBefore(lastAttemptAt.plus(STALE_PENDING)));
+    }
+
+    /** Claims the declaration for another attempt: back to PENDING with the attempt counted. */
+    public void startRetry(Instant now) {
+        if (!isRetryable(now)) {
+            throw new TaxDeclarationNotRetryableException(id, status);
+        }
+        this.status = TaxDeclarationStatus.PENDING;
+        this.retryCount++;
+        this.lastAttemptAt = now;
+    }
+
+    /** 1-based attempt number of the submission currently in flight (the audit log records it). */
+    public int attemptNo() {
+        return retryCount + 1;
     }
 
     private void requirePending() {

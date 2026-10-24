@@ -3,6 +3,7 @@ package com.example.ptin.taxdeclaration.infrastructure.persistence;
 import com.example.ptin.shared.identity.UserId;
 import com.example.ptin.taxdeclaration.domain.model.TaxDeclaration;
 import com.example.ptin.taxdeclaration.domain.model.TaxDeclarationId;
+import com.example.ptin.taxdeclaration.domain.model.TaxDeclarationStatus;
 import com.example.ptin.taxdeclaration.domain.port.out.TaxDeclarationRepository;
 import java.util.List;
 import java.util.Optional;
@@ -30,7 +31,27 @@ class TaxDeclarationJpaRepositoryAdapter implements TaxDeclarationRepository {
     }
 
     @Override
+    public Optional<TaxDeclaration> findByIdForUpdate(TaxDeclarationId id) {
+        return jpaRepository.findByIdForUpdate(id.value()).map(mapper::toDomain);
+    }
+
+    @Override
+    public boolean existsActive(String tin, String invoiceNumber, TaxDeclarationId excludeId) {
+        String failed = TaxDeclarationStatus.FAILED.name();
+        return excludeId == null
+                ? jpaRepository.existsByTinAndInvoiceNumberAndStatusNot(tin, invoiceNumber, failed)
+                : jpaRepository.existsByTinAndInvoiceNumberAndStatusNotAndIdNot(
+                        tin, invoiceNumber, failed, excludeId.value());
+    }
+
+    @Override
     public TaxDeclaration save(TaxDeclaration declaration) {
-        return mapper.toDomain(jpaRepository.save(mapper.toEntity(declaration)));
+        TaxDeclarationJpaEntity entity = jpaRepository.findById(declaration.getId().value())
+                .map(existing -> {
+                    mapper.updateEntity(existing, declaration);
+                    return existing;
+                })
+                .orElseGet(() -> mapper.toEntity(declaration));
+        return mapper.toDomain(jpaRepository.save(entity));
     }
 }

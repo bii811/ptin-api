@@ -1,0 +1,58 @@
+meta {
+  name: declare-rejected
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/tax-declarations
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{userToken}}
+}
+
+body:json {
+  {
+    "invoiceNumber": "{{rejectInvoice}}",
+    "invoiceDate": "20260101",
+    "saleCount": "1",
+    "supplyAmount": "100",
+    "vatAmount": "10",
+    "saleAmount": "110",
+    "items": [
+      {
+        "hsCode": "8517",
+        "hsName": "Telephone sets",
+        "saleCount": "1",
+        "unitSale": "EA",
+        "unitSaleAmount": "100",
+        "supplyAmount": "100",
+        "exciseAmount": "0",
+        "vatAmount": "10",
+        "saleAmount": "110"
+      }
+    ]
+  }
+}
+
+script:pre-request {
+  bru.setVar("rejectInvoice", "E2E-REJECT-" + String(Math.floor(Math.random() * 1e8)).padStart(8, "0"));
+}
+
+script:post-response {
+  if (res.status === 201) bru.setVar("declarationId", res.body.data.id);
+}
+
+tests {
+  test("TaxRIS rejection is stored as FAILED and is retryable", function () {
+    expect(res.status).to.equal(201);
+    const d = res.body.data;
+    expect(d.status).to.equal("FAILED");
+    expect(d.resultCode).to.equal("E01");
+    expect(d.retryCount).to.equal(0);
+    expect(d.retryable).to.equal(true);
+  });
+}

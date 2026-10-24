@@ -1,0 +1,17 @@
+meta {
+  name: retry-no-token
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/v1/tax-declarations/{{declarationId}}/retry
+  body: none
+  auth: none
+}
+
+tests {
+  test("retry no token", function () {
+    expect(res.status).to.equal(401);
+  });
+}

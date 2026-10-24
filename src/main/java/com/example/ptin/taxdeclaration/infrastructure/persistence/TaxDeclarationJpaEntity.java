@@ -82,6 +82,14 @@ public class TaxDeclarationJpaEntity extends AuditableJpaEntity {
     @Column(name = "result_message", length = 1000)
     private String resultMessage;
 
+    @Setter
+    @Column(name = "retry_count", nullable = false)
+    private int retryCount;
+
+    @Setter
+    @Column(name = "last_attempt_at", nullable = false)
+    private Instant lastAttemptAt;
+
     public TaxDeclarationJpaEntity(
             UUID id,
             UUID userId,
@@ -103,7 +111,9 @@ public class TaxDeclarationJpaEntity extends AuditableJpaEntity {
             String itemsJson,
             Instant submittedAt,
             String resultCode,
-            String resultMessage) {
+            String resultMessage,
+            int retryCount,
+            Instant lastAttemptAt) {
         assignId(id);
         this.userId = userId;
         this.status = status;
@@ -125,5 +135,7 @@ public class TaxDeclarationJpaEntity extends AuditableJpaEntity {
         this.submittedAt = submittedAt;
         this.resultCode = resultCode;
         this.resultMessage = resultMessage;
+        this.retryCount = retryCount;
+        this.lastAttemptAt = lastAttemptAt;
     }
 }
