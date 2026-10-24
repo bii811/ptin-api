@@ -1,0 +1,17 @@
+meta {
+  name: unknown-path-anonymous
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/v1/does-not-exist
+  body: none
+  auth: none
+}
+
+tests {
+  test("anonymous callers still get 401 for unknown paths", function () {
+    expect(res.status).to.equal(401);
+  });
+}

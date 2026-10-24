@@ -12,7 +12,7 @@ class ResTaxRisTest {
     private final ObjectMapper mapper = JsonMapper.builder().build();
 
     private ResTaxRis parse(String json) {
-        return mapper.readValue(json, ResTaxRis.Envelope.class).res();
+        return ResTaxRis.parse(mapper, json);
     }
 
     @Test
@@ -30,6 +30,14 @@ class ResTaxRisTest {
                 {"ResTaxRIS":{"Result":{"CD":"E01","MSG":"bad","CNT":"0"}}}""");
         assertEquals("E01", res.result().cd());
         assertNull(res.tinInfo());
+    }
+
+    @Test
+    void authErrorHasResultAtTheRoot() {
+        ResTaxRis res = parse("""
+                {"Result":{"CD":"904","MSG":"You do not have authentication to join the service.","CNT":"0"}}""");
+        assertEquals("904", res.result().cd());
+        assertEquals("You do not have authentication to join the service.", res.result().msg());
     }
 
     @Test

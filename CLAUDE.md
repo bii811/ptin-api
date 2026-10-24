@@ -77,6 +77,7 @@ needed, logs in as admin by reusing the `new-user-flow` requests; all need `otp.
 | `ptin-reject-and-negative` | profile 422/400, submit validation, one-application-per-user 409, applicant 403s, admin edit, reject, and 409s on re-reject / approve / retry / edit of a REJECTED application, no reapply |
 | `tax-declaration-negative` | declare without an issued PTIN (422), invalid body (400), no token (401), unknown id (404) |
 | `labor-flow` | LABOR submit, `managePTinInformation` audited in TaxRIS logs, approve outcome ISSUED or ISSUANCE_FAILED, retry branch (409 if ISSUED, else `PTIN_RETRY` attempt 2) |
+| `error-handling` | framework-level errors keep their status and the `ApiResponse` envelope: malformed JSON / empty body (400), wrong content type (415), wrong method (405), unknown path (404, 401 when anonymous), invalid UUID / sort / date / enum (400) |
 
 Run one with `cd bruno-e2e && bru run <folder> --env uat --env-var adminPassword=<admin pw>`. Not covered: a successful tax declaration and a second user reading someone else's application.
 
@@ -247,4 +248,8 @@ an already-issued token stays valid until it expires.
 All controller responses wrap in `com.example.ptin.shared.web.ApiResponse<T>` (`success`, `data`,
 `message`). `GlobalExceptionHandler` translates `DomainException` subclasses to their carried
 `HttpStatus`, plus `MethodArgumentNotValidException` → 400, `AccessDeniedException` → 403,
-`IllegalArgumentException` → 400 — all as `ApiResponse.failure(message)`.
+`IllegalArgumentException` → 400, bad `sort` property → 400, unexpected exceptions → 500 (logged, generic message) — all as
+`ApiResponse.failure(message)`. `GlobalExceptionHandler` extends `ResponseEntityExceptionHandler`, so framework errors (malformed
+JSON 400, 405, 415, unknown path 404, ...) also use the envelope; without it they were forwarded to the unpermitted `/error` and
+surfaced as a bodyless 401. TaxRIS error replies (bare `{"Result":{...}}`, e.g. code 904) are parsed by `ResTaxRis.parse`, so
+the real code/message reaches `failureReason`.

@@ -3,6 +3,8 @@ package com.example.ptin.shared.mediation;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /** Inner object of the {@code ResTaxRIS} response envelope. {@code TinInfo}/{@code Address} are absent on errors. */
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -44,7 +46,10 @@ public record ResTaxRis(
             @JsonProperty("ADDR_CD_NM") String name) {
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    record Envelope(@JsonProperty("ResTaxRIS") ResTaxRis res) {
+    /** Reads either {@code {"ResTaxRIS":{"Result":...}}} or the bare {@code {"Result":...}} that TaxRIS sends on auth errors. */
+    static ResTaxRis parse(ObjectMapper mapper, String json) {
+        JsonNode root = mapper.readTree(json);
+        JsonNode wrapped = root.path("ResTaxRIS");
+        return mapper.treeToValue(wrapped.isMissingNode() ? root : wrapped, ResTaxRis.class);
     }
 }

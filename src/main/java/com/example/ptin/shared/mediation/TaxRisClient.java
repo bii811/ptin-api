@@ -77,7 +77,7 @@ public class TaxRisClient {
         }
         ResTaxRis res;
         try {
-            res = objectMapper.readValue(exchange.body(), ResTaxRis.Envelope.class).res();
+            res = ResTaxRis.parse(objectMapper, exchange.body());
         } catch (RuntimeException e) {
             return TaxRisResult.failure(null, "Unparseable TaxRIS response (HTTP " + exchange.status() + ")");
         }

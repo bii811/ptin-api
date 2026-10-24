@@ -53,10 +53,11 @@ human-readable and **not** a stable code.
 |---|---|
 | 200 | OK |
 | 201 | Created (`POST /ptin/applications`, `POST /tax-declarations`) |
-| 400 | Bean validation failure (`message` = `field: reason, ...`) or domain validation (`IllegalArgumentException`, e.g. `gender must be 'M' or 'F'`) |
+| 400 | Malformed/empty JSON body, invalid UUID/date/enum/sort parameter, bean validation failure (`message` = `field: reason, ...`) or domain validation (`IllegalArgumentException`, e.g. `gender must be 'M' or 'F'`) |
 | 401 | Missing/invalid/expired token, wrong credentials |
 | 403 | Authenticated but not allowed (role, or reading someone else's record) |
-| 404 | Resource not found |
+| 404 | Resource not found (also unknown path, when authenticated; anonymous callers get 401) |
+| 405 / 415 | Wrong HTTP method / content type |
 | 409 | State conflict (e.g. approving a non-pending application) |
 | 422 | Business precondition not met (profile incomplete, no issued PTIN) |
 | 423 | Account locked |
