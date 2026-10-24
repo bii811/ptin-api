@@ -177,7 +177,7 @@ Request/response identical to [step 2](#2-verify-registration-otp); the returned
 { "resetToken": "<token>", "newPassword": "NewSecret123" }
 ```
 
-`200`: `{ "data": { "passwordStrength": "STRONG" } }`. Clears lockout and the temporary-password flag. The token is **single-use** — rejected if issued before the last password update.
+`200`: `{ "data": { "passwordStrength": "STRONG" } }`. Clears lockout and the temporary-password flag. The token is **single-use** — bound to the password version it was issued against (a `ver` claim), so it is rejected once the password has changed.
 
 | Status | Meaning |
 |---|---|

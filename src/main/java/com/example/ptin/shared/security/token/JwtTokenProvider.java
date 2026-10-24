@@ -23,6 +23,7 @@ public class JwtTokenProvider {
 
     private static final String ROLE_CLAIM = "role";
     private static final String PURPOSE_CLAIM = "purpose";
+    public static final String VERSION_CLAIM = "ver";
 
     private final SecretKey signingKey;
     private final long accessTokenExpirySeconds;
@@ -63,6 +64,11 @@ public class JwtTokenProvider {
      * claim and no role, so it can never be accepted as an access token (see {@link #parse}).
      */
     public IssuedToken issueFlowToken(String purpose, String subject) {
+        return issueFlowToken(purpose, subject, null);
+    }
+
+    /** {@code version} (optional) pins the token to the subject's state, e.g. the password it was issued against. */
+    public IssuedToken issueFlowToken(String purpose, String subject, String version) {
         Instant issuedAt = clock.instant().truncatedTo(ChronoUnit.SECONDS);
         Instant expiresAt = issuedAt.plusSeconds(flowTokenExpirySeconds);
         String token = Jwts.builder()
@@ -70,6 +76,7 @@ public class JwtTokenProvider {
                 .issuer(issuer)
                 .subject(subject)
                 .claim(PURPOSE_CLAIM, purpose)
+                .claim(VERSION_CLAIM, version)
                 .issuedAt(Date.from(issuedAt))
                 .expiration(Date.from(expiresAt))
                 .signWith(signingKey)

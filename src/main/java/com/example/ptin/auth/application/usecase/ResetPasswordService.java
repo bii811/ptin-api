@@ -41,9 +41,9 @@ class ResetPasswordService implements ResetPasswordUseCase {
         User user = userRepository.findByMobileNumber(redeemed.mobileNumber())
                 .filter(User::isActive)
                 .orElseThrow(InvalidFlowTokenException::new);
-        // Single use: a token issued before the last password change has already been spent (or
-        // superseded), so a leaked token cannot reset the password a second time.
-        if (user.getPasswordUpdatedAt() != null && !redeemed.issuedAt().isAfter(user.getPasswordUpdatedAt())) {
+        // Single use: the token is bound to the password version it was issued against, so once the password
+        // has changed (reset, temporary password, change-password) it is spent and a leaked token is useless.
+        if (!user.passwordVersion().equals(redeemed.version())) {
             throw new InvalidFlowTokenException();
         }
 

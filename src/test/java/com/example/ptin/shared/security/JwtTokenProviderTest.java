@@ -38,6 +38,17 @@ class JwtTokenProviderTest {
     }
 
     @Test
+    void flowTokenCarriesOptionalVersion() {
+        JwtTokenProvider tokens = provider(Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC));
+
+        String bound = tokens.issueFlowToken("PASSWORD_RESET", "x", "v1").value();
+        assertEquals("v1", tokens.parseFlowToken(bound, "PASSWORD_RESET").get(JwtTokenProvider.VERSION_CLAIM, String.class));
+
+        String unbound = tokens.issueFlowToken("REGISTRATION", "x").value();
+        assertEquals(null, tokens.parseFlowToken(unbound, "REGISTRATION").get(JwtTokenProvider.VERSION_CLAIM, String.class));
+    }
+
+    @Test
     void flowTokenExpiresAfterTenMinutes() {
         Instant start = Instant.parse("2026-01-01T00:00:00Z");
         String flow = provider(Clock.fixed(start, ZoneOffset.UTC)).issueFlowToken("REGISTRATION", "x").value();

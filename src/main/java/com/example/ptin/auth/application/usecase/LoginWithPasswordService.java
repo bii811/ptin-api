@@ -2,7 +2,6 @@ package com.example.ptin.auth.application.usecase;
 
 import com.example.ptin.auth.domain.exception.InvalidCredentialsException;
 import com.example.ptin.auth.domain.model.MobileNumber;
-import com.example.ptin.auth.domain.model.OtpPurpose;
 import com.example.ptin.auth.domain.model.User;
 import com.example.ptin.auth.domain.port.in.LoginResult;
 import com.example.ptin.auth.domain.port.in.LoginWithPasswordUseCase;
@@ -60,7 +59,7 @@ class LoginWithPasswordService implements LoginWithPasswordUseCase {
         if (user.isMustChangePassword()) {
             // Temporary password: no session until the user picks their own (spent on /forgot-password/reset).
             return LoginResult.passwordChangeRequired(
-                    authTokenIssuer.issueFlowToken(OtpPurpose.PASSWORD_RESET, user.getMobileNumber()));
+                    authTokenIssuer.issuePasswordResetToken(user));
         }
         return LoginResult.authenticated(authTokenIssuer.issueFor(user));
     }

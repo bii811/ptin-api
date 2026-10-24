@@ -124,6 +124,11 @@ public class User {
         return passwordHash != null && matcher.matches(rawPassword, passwordHash);
     }
 
+    /** Changes whenever the password does; password-reset tokens are bound to it so each one is single-use. */
+    public String passwordVersion() {
+        return passwordUpdatedAt == null ? "0" : String.valueOf(passwordUpdatedAt.toEpochMilli());
+    }
+
     public boolean isLockedAt(Instant now) {
         return lockedUntil != null && now.isBefore(lockedUntil);
     }

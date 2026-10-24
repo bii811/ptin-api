@@ -73,7 +73,7 @@ needed, logs in as admin by reusing the `new-user-flow` requests; all need `otp.
 |---|---|
 | `auth-negative` | invalid/duplicate mobile (400/409), OTP wrong code, resend cooldown and attempt ceiling (429), bad flow token (401), wrong password / unknown account (401), bad login identifiers (400), missing/garbage/flow token on `/auth/me` (401), password change policy |
 | `lockout-and-reset` | 5 failed logins lock (423), forgot-password reset clears the lock, old password rejected, reset token single-use, no account enumeration |
-| `admin-permissions` | applicant gets 403 on admin endpoints, temporary-password flow (404 unknown, forced reset, temp password stops working) |
+| `admin-permissions` | applicant gets 403 on admin endpoints, temporary-password flow (404 unknown, forced reset, temp password stops working, reset token spent) |
 | `ptin-reject-and-negative` | profile 422/400, submit validation, one-application-per-user 409, applicant 403s, admin edit, reject, and 409s on re-reject / approve / retry / edit of a REJECTED application, no reapply |
 | `tax-declaration-negative` | declare without an issued PTIN (422), invalid body (400), no token (401), unknown id (404) |
 | `labor-flow` | LABOR submit, `managePTinInformation` audited in TaxRIS logs, approve outcome ISSUED or ISSUANCE_FAILED, retry branch (409 if ISSUED, else `PTIN_RETRY` attempt 2) |
@@ -178,7 +178,7 @@ rejects flow tokens and `parseFlowToken` rejects access tokens, so neither can s
 - **Forgot password** — `/forgot-password/otp/request` always returns the generic success message
   (unknown numbers and throttled requests are swallowed) → `/forgot-password/otp/verify` (returns reset
   token) → `/forgot-password/reset` `{resetToken, newPassword}`; clears any lockout. A reset token is
-  single-use: it is rejected if issued before the user's `passwordUpdatedAt`.
+  single-use: it carries a `ver` claim (the user's `passwordVersion()`, epoch millis of `passwordUpdatedAt`) and is rejected once the password has changed, with no clock-granularity race.
 - **Temporary password (support fallback)** — `POST /api/v1/admin/users/temporary-password`
   `{mobileNumber}` (`@PreAuthorize("hasRole('ADMIN')")`; applicants only — staff have no mobile) generates a random 12-char password, stores its hash
   with `must_change_password = true`, and returns it once for the admin to relay. Logging in with it

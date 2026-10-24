@@ -1,6 +1,8 @@
 package com.example.ptin.auth.domain.model;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
@@ -24,5 +26,17 @@ class UserTemporaryPasswordTest {
 
         user.changePassword("Own12345", now.plusSeconds(5));
         assertFalse(user.isMustChangePassword());
+    }
+
+    @Test
+    void passwordVersionChangesWithEveryPasswordChangeEvenWithinOneSecond() {
+        Instant now = Instant.parse("2026-01-01T00:00:00Z");
+        User user = User.register(new MobileNumber("2012345678"));
+        assertEquals("0", user.passwordVersion());
+
+        user.changePassword("First1234", now);
+        String first = user.passwordVersion();
+        user.changePassword("Second1234", now.plusMillis(300));
+        assertNotEquals(first, user.passwordVersion());
     }
 }
