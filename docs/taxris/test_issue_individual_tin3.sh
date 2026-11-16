@@ -4,7 +4,7 @@
 BASE="http://202.123.182.165:8080"
 HASH_KEY="+gw0/BE/9xjGkcsjaVStnbbitwU1YxGqQxuQSR0+cMo="
 
-curl -s -X POST "http://202.123.182.165:8080/mediate/TaxRIS/issueIndividualTin/ReqTinInfo" \
+RESP=$(curl -sS -X POST "http://202.123.182.165:8080/mediate/TaxRIS/issueIndividualTin/ReqTinInfo" \
   -H "Content-Type: application/json" \
   -d "{
     \"ReqTinInfo\": {
@@ -41,4 +41,7 @@ curl -s -X POST "http://202.123.182.165:8080/mediate/TaxRIS/issueIndividualTin/R
       \"BANK_ACC_NO\": \"\",
       \"SO_SE_NO\": \"\"
     }
-  }" | python3 -m json.tool 2>/dev/null || echo "(raw response above)"
+  }")
+
+# Pretty-print if it is JSON, otherwise show the raw body (never swallow it).
+echo "$RESP" | python3 -m json.tool 2>/dev/null || echo "$RESP"
